@@ -4,121 +4,134 @@ package dev.nauber.esphomerccar
 import java.net.Socket
 import Api
 import android.util.Log
+import com.google.protobuf.AbstractMessage
+import com.google.protobuf.ByteString
 import java.io.*
+import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.reflect.typeOf
 
 
-class Communication(val host: String, val port: Int) : Runnable {
+class Communication(val host: String, val port: Int, val password: String?) : Runnable {
     val TAG = "Communication"
-
-
     val t = Thread(this)
-    lateinit var on_response: (String) -> Unit
 
-    fun sendMessage(msg: Api.HelloRequest, ous: OutputStream) {
-        val message_type = 1
+    var onImage: ((ByteString) -> Unit)? = null
+    var onLog: ((String) -> Unit)? = null
+
+    val msgQueue = ConcurrentLinkedQueue<AbstractMessage>()
+
+    fun setImageStream(stream: Boolean, single: Boolean) {
+        msgQueue.add(
+            Api.CameraImageRequest.newBuilder().setSingle(single).setStream(stream).build()
+        )
+        msgQueue.add(
+            Api.SubscribeStatesRequest.newBuilder().build()
+        )
+
+    }
 
 
-        val encoded = msg.toByteArray()
+    private fun sendMessage(m: AbstractMessage, ous: OutputStream) {
 
-
-        fun sendVarInt(value: Int) {
-            var v = value
-            if (value <= 0x7F) {
-                ous.write(value)
-                return
-            }
-
-            while (v > 0) {
-                val temp = v and 0x7F
-                v = v shr 7
-                if (v > 0)
-                    ous.write(temp or 0x80)
-                else
-                    ous.write(temp)
-            }
+        val message_type = when (m) {
+            is Api.HelloRequest -> 1
+            is Api.ConnectRequest -> 3
+            is Api.DisconnectRequest-> 5
+            is Api.PingResponse -> 8
+            is Api.DeviceInfoRequest -> 9
+            is Api.SubscribeStatesRequest -> 20
+            is Api.CameraImageRequest -> 45
+            else -> 0
         }
 
+        sendRawMessage(m.toByteArray(), message_type, ous)
+
+        Log.v(TAG, "TX_MSG${message_type} ${m.javaClass}")
+    }
+
+    private fun sendRawMessage(raw: ByteArray, message_type: Int, ous: OutputStream) {
         ous.write(0)
-        sendVarInt(encoded.size)
-        sendVarInt(message_type)
-        ous.write(encoded)
+        writeVarInt(raw.size, ous)
+        writeVarInt(message_type, ous)
+        ous.write(raw)
         ous.flush()
     }
 
 
-    fun receiveMessage(ins: InputStream) :Api.HelloResponse{
-
-        fun receiveVarInt(): Int {
-            var v = 0
-            while (true) {
-                val raw = ins.read()
-                v += raw
-                if ((raw and 0x80) == 0)
-                    break
-                v = v shl 7
-            }
-            return v
+    private fun receiveMessage(ins: InputStream): AbstractMessage? {
+        val (raw_msg, msgType) = receiveRawMessage(ins)
+        val msg = when (msgType) {
+            2 ->  Api.HelloResponse.parseFrom(raw_msg)
+            4 ->  Api.ConnectResponse.parseFrom(raw_msg)
+            6 ->  Api.DisconnectResponse.parseFrom(raw_msg)
+            7 ->  Api.PingRequest.parseFrom(raw_msg)
+            10 ->  Api.DeviceInfoResponse.parseFrom(raw_msg)
+            24 -> Api.LightStateResponse.parseFrom(raw_msg)
+            44 ->  Api.CameraImageResponse.parseFrom(raw_msg)
+            else -> null
         }
-
-        if (ins.read() != 0x00){
-            Log.e(TAG, "Invalid preamble")
-            }
-
-        val length = receiveVarInt()
-        val msg_type = receiveVarInt()
-
-        val raw_msg = ByteArray(length)
-        ins.read(raw_msg)
-
-        Log.e(TAG, "RX_MSG${msg_type} ${length}b $raw_msg")
-
-        return Api.HelloResponse.parseFrom(raw_msg)
-//
-//        if msg_type not in MESSAGE_TYPE_TO_PROTO:
-//        _LOGGER.debug("%s: Skipping message type %s",
-//            self._params.address, msg_type)
-//        return
-//
-//        msg = MESSAGE_TYPE_TO_PROTO[msg_type]()
-//        try:
-//            msg.ParseFromString(raw_msg)
-//            except Exception as e:
-//            raise APIConnectionError("Invalid protobuf message: {}".format(e))
-//            _LOGGER.debug("%s: Got message of type %s: %s",
-//                self._params.address, type(msg), msg)
-//            for msg_handler in self._message_handlers[:]:
-//            msg_handler(msg)
-//            await self._handle_internal_messages(msg)
-
+        Log.e(TAG, "RX MSG${msgType} ${msg?.javaClass}")
+        return msg
     }
 
-    fun start(on_response: (String) -> Unit) {
-        this.on_response = on_response
+    private fun receiveRawMessage(ins: InputStream): Pair<ByteArray, Int> {
+        if (ins.read() != 0x00) {
+            Log.e(TAG, "Invalid preamble")
+        }
+
+        val length = readVarInt(ins)
+        val msgType = readVarInt(ins)
+
+        Log.v(TAG, "RAW_RX try to read MSG${msgType} ${length} ")
+        val raw_msg = ByteArray(length)
+        val res = ins.read(raw_msg)
+
+        Log.v(TAG, "RAW_RX MSG${msgType} ${length}b $raw_msg res=${res}")
+
+        return Pair(raw_msg, msgType)
+    }
+
+    fun start() {
         t.start()
     }
 
     override fun run() {
         try {
 
-            var client = Socket(host, port)
-            val hello = Api.HelloRequest.newBuilder().setClientInfo("esphome rccar").build()
+            val client = Socket(host, port)
 
             val ins = client.getInputStream()
             val ous = client.getOutputStream()
 
-            sendMessage(hello, ous)
-            val res = receiveMessage(ins)
+            sendMessage(Api.HelloRequest.newBuilder().setClientInfo("esphome rccar").build(),ous)
+            val resHello = receiveMessage(ins) as Api.HelloResponse
 
             val str =
-                "ESPHome ${res.serverInfo}  API ${res.apiVersionMajor}:${res.apiVersionMinor}  "
+                "Connected to ${client.inetAddress}: ${resHello.serverInfo} API ${resHello.apiVersionMajor}:${resHello.apiVersionMinor}"
+            onLog?.invoke(str)
             Log.v(TAG, str)
-            this.on_response("Hi" + str)
 
-//            for (b in ous.toByteArray()) {
-//                val st = String.format("%02X", b)
-//                Log.v(TAG, st)
-//            }
+            sendMessage(Api.ConnectRequest.newBuilder().build(), ous)
+            val resConn = receiveMessage(ins) as Api.ConnectResponse
+            Log.v(TAG, "ccc " + resConn.invalidPassword)
 
+            sendMessage(Api.DeviceInfoRequest.newBuilder().build(), ous)
+
+            while (true) {
+                val msg = receiveMessage(ins)
+                when (msg) {
+                    is Api.PingRequest -> sendMessage(Api.PingResponse.newBuilder().build(), ous)
+                    is Api.CameraImageResponse -> {
+                        Log.v(TAG,"Image key=${msg.key} done=${msg.done} data.len=${msg.data.size()} ")
+                        onImage?.let { it(msg.data)}
+                    }
+                    is Api.DeviceInfoResponse -> onLog?.invoke("Info: " + msg.compilationTime)
+                    is Api.LightStateResponse ->  Log.v(TAG,"LightStateResponse key=${msg.key} brightness=${msg.brightness}")
+                }
+                val txmsg = msgQueue.poll()
+                if (txmsg != null)
+                    sendMessage(txmsg, ous)
+            }
             client.close()
 
 

@@ -20,18 +20,28 @@ class MainActivity : AppCompatActivity() {
             Snackbar.make(view, "HIHIHIH", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
 
-            var c = Communication("192.168.0.220", 6053)
+            var c = Communication("192.168.0.220", 6053, null)
             //var c = Communication("www.google.de", 80)
-            c.start() { s ->
+            c.onLog = { s ->
                 Log.v(TAG, "XX " + s)
 
                 Snackbar.make(view, s, Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()
             }
+            c.onImage = { i ->
+                Log.v(TAG, "XX " + i)
 
+                Snackbar.make(view, "XX " + i, Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show()
+            }
+            c.start()
+            c.setImageStream(true,false)
 
         }
     }
+
+
+
 
 //        fullscreenContent.post {
 //            fullscreenContent.setText(s)
