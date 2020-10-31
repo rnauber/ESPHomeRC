@@ -8,7 +8,6 @@ import com.google.protobuf.AbstractMessage
 import com.google.protobuf.ByteString
 import java.io.*
 import java.util.concurrent.ConcurrentLinkedQueue
-import kotlin.reflect.typeOf
 
 
 class Communication(val host: String, val port: Int, val password: String?) : Runnable {
@@ -27,26 +26,31 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
         msgQueue.add(
             Api.SubscribeStatesRequest.newBuilder().build()
         )
+    }
 
+    fun listEntities() {
+        msgQueue.add(Api.ListEntitiesRequest.newBuilder().build())
     }
 
 
     private fun sendMessage(m: AbstractMessage, ous: OutputStream) {
 
-        val message_type = when (m) {
+        val messageType = when (m) {
             is Api.HelloRequest -> 1
             is Api.ConnectRequest -> 3
-            is Api.DisconnectRequest-> 5
+            is Api.DisconnectRequest -> 5
             is Api.PingResponse -> 8
             is Api.DeviceInfoRequest -> 9
+            is Api.ListEntitiesRequest -> 11
             is Api.SubscribeStatesRequest -> 20
             is Api.CameraImageRequest -> 45
+
             else -> 0
         }
 
-        sendRawMessage(m.toByteArray(), message_type, ous)
+        sendRawMessage(m.toByteArray(), messageType, ous)
 
-        Log.v(TAG, "TX_MSG${message_type} ${m.javaClass}")
+        Log.v(TAG, "TX_MSG${messageType} ${m.javaClass}")
     }
 
     private fun sendRawMessage(raw: ByteArray, message_type: Int, ous: OutputStream) {
@@ -61,13 +65,17 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
     private fun receiveMessage(ins: InputStream): AbstractMessage? {
         val (raw_msg, msgType) = receiveRawMessage(ins)
         val msg = when (msgType) {
-            2 ->  Api.HelloResponse.parseFrom(raw_msg)
-            4 ->  Api.ConnectResponse.parseFrom(raw_msg)
-            6 ->  Api.DisconnectResponse.parseFrom(raw_msg)
-            7 ->  Api.PingRequest.parseFrom(raw_msg)
-            10 ->  Api.DeviceInfoResponse.parseFrom(raw_msg)
+            2 -> Api.HelloResponse.parseFrom(raw_msg)
+            4 -> Api.ConnectResponse.parseFrom(raw_msg)
+            6 -> Api.DisconnectResponse.parseFrom(raw_msg)
+            7 -> Api.PingRequest.parseFrom(raw_msg)
+            10 -> Api.DeviceInfoResponse.parseFrom(raw_msg)
+            15 -> Api.ListEntitiesLightResponse.parseFrom(raw_msg)
+            19 -> Api.ListEntitiesDoneResponse.parseFrom(raw_msg)
             24 -> Api.LightStateResponse.parseFrom(raw_msg)
-            44 ->  Api.CameraImageResponse.parseFrom(raw_msg)
+            29 -> Api.SubscribeLogsResponse.parseFrom(raw_msg)
+            43 -> Api.ListEntitiesCameraResponse.parseFrom(raw_msg)
+            44 -> Api.CameraImageResponse.parseFrom(raw_msg)
             else -> null
         }
         Log.e(TAG, "RX MSG${msgType} ${msg?.javaClass}")
@@ -84,9 +92,14 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
 
         Log.v(TAG, "RAW_RX try to read MSG${msgType} ${length} ")
         val raw_msg = ByteArray(length)
-        val res = ins.read(raw_msg)
 
-        Log.v(TAG, "RAW_RX MSG${msgType} ${length}b $raw_msg res=${res}")
+        var pos = 0
+        while (pos < length) {
+            val read = ins.read(raw_msg, pos, length - pos)
+            pos += read
+        }
+
+        Log.v(TAG, "RAW_RX MSG${msgType} ${length}b $raw_msg")
 
         return Pair(raw_msg, msgType)
     }
@@ -103,7 +116,7 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
             val ins = client.getInputStream()
             val ous = client.getOutputStream()
 
-            sendMessage(Api.HelloRequest.newBuilder().setClientInfo("esphome rccar").build(),ous)
+            sendMessage(Api.HelloRequest.newBuilder().setClientInfo("esphome rccar").build(), ous)
             val resHello = receiveMessage(ins) as Api.HelloResponse
 
             val str =
@@ -117,16 +130,29 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
 
             sendMessage(Api.DeviceInfoRequest.newBuilder().build(), ous)
 
+            val camData: MutableMap<Int, ByteString?> = mutableMapOf()
+
             while (true) {
                 val msg = receiveMessage(ins)
                 when (msg) {
                     is Api.PingRequest -> sendMessage(Api.PingResponse.newBuilder().build(), ous)
                     is Api.CameraImageResponse -> {
-                        Log.v(TAG,"Image key=${msg.key} done=${msg.done} data.len=${msg.data.size()} ")
-                        onImage?.let { it(msg.data)}
+                        Log.v(
+                            TAG,
+                            "Image key=${msg.key} done=${msg.done} data.len=${msg.data.size()} "
+                        )
+                        if (camData[msg.key] != null)
+                            camData[msg.key] = camData[msg.key]!!.concat(msg.data)
+                        else
+                            camData[msg.key] = msg.data
+                        if (msg.done and (camData[msg.key] != null))
+                            onImage?.invoke(camData[msg.key]!!)
                     }
                     is Api.DeviceInfoResponse -> onLog?.invoke("Info: " + msg.compilationTime)
-                    is Api.LightStateResponse ->  Log.v(TAG,"LightStateResponse key=${msg.key} brightness=${msg.brightness}")
+                    is Api.LightStateResponse -> Log.v(
+                        TAG,
+                        "LightStateResponse key=${msg.key} brightness=${msg.brightness}"
+                    )
                 }
                 val txmsg = msgQueue.poll()
                 if (txmsg != null)

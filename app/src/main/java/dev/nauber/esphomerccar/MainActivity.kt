@@ -1,7 +1,9 @@
 package dev.nauber.esphomerccar
 
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
+import android.widget.ImageView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
@@ -14,13 +16,16 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
 
+        val imageView=findViewById<ImageView>(R.id.imageView)
+
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener { view ->
 
 
             Snackbar.make(view, "HIHIHIH", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
 
-            var c = Communication("192.168.0.220", 6053, null)
+            //val c = Communication("192.168.0.220", 6053, null)
+            val c = Communication("10.0.2.2", 6053, null)
             //var c = Communication("www.google.de", 80)
             c.onLog = { s ->
                 Log.v(TAG, "XX " + s)
@@ -28,14 +33,16 @@ class MainActivity : AppCompatActivity() {
                 Snackbar.make(view, s, Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()
             }
-            c.onImage = { i ->
-                Log.v(TAG, "XX " + i)
-
-                Snackbar.make(view, "XX " + i, Snackbar.LENGTH_LONG)
+            c.onImage = { img ->
+                Snackbar.make(view, "XX " + img.size(), Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()
+
+                val bm=BitmapFactory.decodeByteArray(img.toByteArray(),0,img.size())
+                imageView.post { imageView.setImageBitmap(bm)}
             }
             c.start()
-            c.setImageStream(true,false)
+            c.setImageStream(stream = true, single = false)
+            c.listEntities()
 
         }
     }
