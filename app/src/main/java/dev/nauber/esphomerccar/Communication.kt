@@ -6,6 +6,8 @@ import Api
 import android.util.Log
 import com.google.protobuf.AbstractMessage
 import com.google.protobuf.ByteString
+import com.google.protobuf.CodedInputStream
+import org.apache.poi.util.HexDump
 import java.io.*
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -13,6 +15,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
 class Communication(val host: String, val port: Int, val password: String?) : Runnable {
     val TAG = "Communication"
     val t = Thread(this)
+
+    val maxMsgLen = 1024 * 1024   // prevent OOM
 
     var onImage: ((ByteString) -> Unit)? = null
     var onLog: ((String) -> Unit)? = null
@@ -32,9 +36,14 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
         msgQueue.add(Api.ListEntitiesRequest.newBuilder().build())
     }
 
+    fun suscribeLogs() {
+        msgQueue.add(
+            Api.SubscribeLogsRequest.newBuilder().setLevel(Api.LogLevel.LOG_LEVEL_VERBOSE).build()
+        )
+    }
+
 
     private fun sendMessage(m: AbstractMessage, ous: OutputStream) {
-
         val messageType = when (m) {
             is Api.HelloRequest -> 1
             is Api.ConnectRequest -> 3
@@ -43,12 +52,12 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
             is Api.DeviceInfoRequest -> 9
             is Api.ListEntitiesRequest -> 11
             is Api.SubscribeStatesRequest -> 20
+            is Api.SubscribeLogsRequest -> 28
             is Api.CameraImageRequest -> 45
-
-            else -> 0
+            else -> null
         }
-
-        sendRawMessage(m.toByteArray(), messageType, ous)
+        if (messageType != null)
+            sendRawMessage(m.toByteArray(), messageType, ous)
 
         Log.v(TAG, "TX_MSG${messageType} ${m.javaClass}")
     }
@@ -64,21 +73,26 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
 
     private fun receiveMessage(ins: InputStream): AbstractMessage? {
         val (raw_msg, msgType) = receiveRawMessage(ins)
-        val msg = when (msgType) {
-            2 -> Api.HelloResponse.parseFrom(raw_msg)
-            4 -> Api.ConnectResponse.parseFrom(raw_msg)
-            6 -> Api.DisconnectResponse.parseFrom(raw_msg)
-            7 -> Api.PingRequest.parseFrom(raw_msg)
-            10 -> Api.DeviceInfoResponse.parseFrom(raw_msg)
-            15 -> Api.ListEntitiesLightResponse.parseFrom(raw_msg)
-            19 -> Api.ListEntitiesDoneResponse.parseFrom(raw_msg)
-            24 -> Api.LightStateResponse.parseFrom(raw_msg)
-            29 -> Api.SubscribeLogsResponse.parseFrom(raw_msg)
-            43 -> Api.ListEntitiesCameraResponse.parseFrom(raw_msg)
-            44 -> Api.CameraImageResponse.parseFrom(raw_msg)
-            else -> null
+        var msg: AbstractMessage? = null
+        try {
+            msg = when (msgType) {
+                2 -> Api.HelloResponse.parseFrom(raw_msg)
+                4 -> Api.ConnectResponse.parseFrom(raw_msg)
+                6 -> Api.DisconnectResponse.parseFrom(raw_msg)
+                7 -> Api.PingRequest.parseFrom(raw_msg)
+                10 -> Api.DeviceInfoResponse.parseFrom(raw_msg)
+                15 -> Api.ListEntitiesLightResponse.parseFrom(raw_msg)
+                19 -> Api.ListEntitiesDoneResponse.parseFrom(raw_msg)
+                24 -> Api.LightStateResponse.parseFrom(raw_msg)
+                29 -> Api.SubscribeLogsResponse.parseFrom(raw_msg)
+                43 -> Api.ListEntitiesCameraResponse.parseFrom(raw_msg)
+                44 -> Api.CameraImageResponse.parseFrom(raw_msg)
+                else -> null
+            }
+        } catch (e: com.google.protobuf.InvalidProtocolBufferException) {
+            e.printStackTrace()
         }
-        Log.e(TAG, "RX MSG${msgType} ${msg?.javaClass}")
+        Log.v(TAG, "RX MSG${msgType} ${msg?.javaClass}")
         return msg
     }
 
@@ -90,16 +104,23 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
         val length = readVarInt(ins)
         val msgType = readVarInt(ins)
 
-        Log.v(TAG, "RAW_RX try to read MSG${msgType} ${length} ")
+        Log.v(TAG, "RAW_RX try to read MSG${msgType} with ${length} bytes")
+        if (length > maxMsgLen) {
+            //TODO error handling
+            return Pair(ByteArray(0), 0)
+        }
+
         val raw_msg = ByteArray(length)
 
         var pos = 0
         while (pos < length) {
             val read = ins.read(raw_msg, pos, length - pos)
+            Log.d(TAG, "RAW_RX read ${read} bytes pos=$pos")
             pos += read
         }
 
         Log.v(TAG, "RAW_RX MSG${msgType} ${length}b $raw_msg")
+        Log.d(TAG, HexDump.dump(raw_msg, 0, 0))
 
         return Pair(raw_msg, msgType)
     }
@@ -133,26 +154,44 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
             val camData: MutableMap<Int, ByteString?> = mutableMapOf()
 
             while (true) {
-                val msg = receiveMessage(ins)
-                when (msg) {
-                    is Api.PingRequest -> sendMessage(Api.PingResponse.newBuilder().build(), ous)
-                    is Api.CameraImageResponse -> {
-                        Log.v(
-                            TAG,
-                            "Image key=${msg.key} done=${msg.done} data.len=${msg.data.size()} "
+                if (ins.available() > 0) {
+                    val msg = receiveMessage(ins)
+                    when (msg) {
+                        is Api.PingRequest -> sendMessage(
+                            Api.PingResponse.newBuilder().build(), ous
                         )
-                        if (camData[msg.key] != null)
-                            camData[msg.key] = camData[msg.key]!!.concat(msg.data)
-                        else
-                            camData[msg.key] = msg.data
-                        if (msg.done and (camData[msg.key] != null))
-                            onImage?.invoke(camData[msg.key]!!)
+                        is Api.CameraImageResponse -> {
+                            Log.v(
+                                TAG,
+                                "Image key=${msg.key} done=${msg.done} data.len=${msg.data.size()} "
+                            )
+                            if (camData[msg.key] != null)
+                                camData[msg.key] = camData[msg.key]!!.concat(msg.data)
+                            else
+                                camData[msg.key] = msg.data
+                            if (msg.done and (camData[msg.key] != null)) {
+                                onImage?.invoke(camData[msg.key]!!)
+                                camData[msg.key] = null
+                            }
+                        }
+                        is Api.DeviceInfoResponse -> onLog?.invoke("Info: " + msg.compilationTime)
+                        is Api.LightStateResponse -> Log.v(
+                            TAG,
+                            "LightStateResponse key=${msg.key} brightness=${msg.brightness}"
+                        )
+                        is Api.ListEntitiesCameraResponse -> Log.v(
+                            TAG,
+                            "ListEntitiesCameraResponse key=${msg.key} name=${msg.name} uniqueId=${msg.uniqueId}"
+                        )
+                        is Api.ListEntitiesLightResponse -> Log.v(
+                            TAG,
+                            "ListEntitiesLightResponse key=${msg.key} name=${msg.name} uniqueId=${msg.uniqueId}"
+                        )
+                        is Api.SubscribeLogsResponse -> Log.v(
+                            TAG,
+                            "SubscribeLogsResponse tag=${msg.tag} ${msg.message}"
+                        )
                     }
-                    is Api.DeviceInfoResponse -> onLog?.invoke("Info: " + msg.compilationTime)
-                    is Api.LightStateResponse -> Log.v(
-                        TAG,
-                        "LightStateResponse key=${msg.key} brightness=${msg.brightness}"
-                    )
                 }
                 val txmsg = msgQueue.poll()
                 if (txmsg != null)

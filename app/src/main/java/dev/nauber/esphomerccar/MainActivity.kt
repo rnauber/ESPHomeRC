@@ -41,17 +41,9 @@ class MainActivity : AppCompatActivity() {
                 imageView.post { imageView.setImageBitmap(bm)}
             }
             c.start()
-            c.setImageStream(stream = true, single = false)
-            c.listEntities()
-
+            //c.listEntities()
+            c.suscribeLogs()
+            c.setImageStream(stream = false, single = true)
         }
     }
-
-
-
-
-//        fullscreenContent.post {
-//            fullscreenContent.setText(s)
-//        }
-
 }
