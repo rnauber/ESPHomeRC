@@ -10,11 +10,14 @@ import com.google.protobuf.CodedInputStream
 import org.apache.poi.util.HexDump
 import java.io.*
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 class Communication(val host: String, val port: Int, val password: String?) : Runnable {
     val TAG = "Communication"
     val t = Thread(this)
+
+    var stop= AtomicBoolean(false)
 
     val maxMsgLen = 1024 * 1024   // prevent OOM
 
@@ -36,7 +39,7 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
         msgQueue.add(Api.ListEntitiesRequest.newBuilder().build())
     }
 
-    fun suscribeLogs() {
+    fun subscribeLogs() {
         msgQueue.add(
             Api.SubscribeLogsRequest.newBuilder().setLevel(Api.LogLevel.LOG_LEVEL_VERBOSE).build()
         )
@@ -106,8 +109,8 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
 
         Log.v(TAG, "RAW_RX try to read MSG${msgType} with ${length} bytes")
         if (length > maxMsgLen) {
-            //TODO error handling
-            return Pair(ByteArray(0), 0)
+            Log.e(TAG, "Ignoring message larger than ${maxMsgLen} bytes: $length bytes.")
+            return Pair(ByteArray(0), -1)
         }
 
         val raw_msg = ByteArray(length)
@@ -116,7 +119,13 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
         while (pos < length) {
             val read = ins.read(raw_msg, pos, length - pos)
             Log.d(TAG, "RAW_RX read ${read} bytes pos=$pos")
-            pos += read
+            if (read > 0)
+                pos += read
+            else
+            {
+                Log.e(TAG, "Reading failed read=$read!")
+                return Pair(ByteArray(0), -1)
+            }
         }
 
         Log.v(TAG, "RAW_RX MSG${msgType} ${length}b $raw_msg")
@@ -127,6 +136,10 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
 
     fun start() {
         t.start()
+    }
+
+    fun stop() {
+        stop.set(true)
     }
 
     override fun run() {
@@ -196,9 +209,10 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
                 val txmsg = msgQueue.poll()
                 if (txmsg != null)
                     sendMessage(txmsg, ous)
+                if (stop.get())
+                    break
             }
             client.close()
-
 
         } catch (e: IOException) {
             e.printStackTrace()
