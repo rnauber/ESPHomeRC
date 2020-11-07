@@ -9,22 +9,28 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.CodedInputStream
 import org.apache.poi.util.HexDump
 import java.io.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 
 class Communication(val host: String, val port: Int, val password: String?) : Runnable {
     val TAG = "Communication"
+    val ClientInfoString = "esphome rccar"
+
     val t = Thread(this)
 
-    var stop= AtomicBoolean(false)
+    val stop = AtomicBoolean(false)
 
-    val maxMsgLen = 1024 * 1024   // prevent OOM
+    private val maxMsgLen = 1024 * 1024   // prevent OOM
 
     var onImage: ((ByteString) -> Unit)? = null
     var onLog: ((String) -> Unit)? = null
 
-    val msgQueue = ConcurrentLinkedQueue<AbstractMessage>()
+    private val msgQueue = ConcurrentLinkedQueue<AbstractMessage>()
+    private val entitiesServices = ConcurrentHashMap<Int, Api.ListEntitiesServicesResponse>()
+    private val entitiesCamera = ConcurrentHashMap<Int, Api.ListEntitiesCameraResponse>()
 
     fun setImageStream(stream: Boolean, single: Boolean) {
         msgQueue.add(
@@ -35,7 +41,7 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
         )
     }
 
-    fun listEntities() {
+    private fun listEntities() {
         msgQueue.add(Api.ListEntitiesRequest.newBuilder().build())
     }
 
@@ -45,6 +51,19 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
         )
     }
 
+    fun setHBridge(index: Int, strength: Float, brake: Boolean) {
+        val key = entitiesServices.searchValues(50) { if (it.name == "hbridge") it else null }?.key
+            ?: return
+
+        val argIndex = Api.ExecuteServiceArgument.newBuilder().setInt(index)
+        val argStrength = Api.ExecuteServiceArgument.newBuilder().setFloat(strength)
+        val argBrake = Api.ExecuteServiceArgument.newBuilder().setBool(brake)
+        msgQueue.add(
+            Api.ExecuteServiceRequest.newBuilder().setKey(key).addArgs(argIndex)
+                .addArgs(argStrength)
+                .addArgs(argBrake).build()
+        )
+    }
 
     private fun sendMessage(m: AbstractMessage, ous: OutputStream) {
         val messageType = when (m) {
@@ -56,6 +75,7 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
             is Api.ListEntitiesRequest -> 11
             is Api.SubscribeStatesRequest -> 20
             is Api.SubscribeLogsRequest -> 28
+            is Api.ExecuteServiceRequest -> 42
             is Api.CameraImageRequest -> 45
             else -> null
         }
@@ -88,6 +108,7 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
                 19 -> Api.ListEntitiesDoneResponse.parseFrom(raw_msg)
                 24 -> Api.LightStateResponse.parseFrom(raw_msg)
                 29 -> Api.SubscribeLogsResponse.parseFrom(raw_msg)
+                41 -> Api.ListEntitiesServicesResponse.parseFrom(raw_msg)
                 43 -> Api.ListEntitiesCameraResponse.parseFrom(raw_msg)
                 44 -> Api.CameraImageResponse.parseFrom(raw_msg)
                 else -> null
@@ -121,15 +142,14 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
             Log.d(TAG, "RAW_RX read ${read} bytes pos=$pos")
             if (read > 0)
                 pos += read
-            else
-            {
+            else {
                 Log.e(TAG, "Reading failed read=$read!")
                 return Pair(ByteArray(0), -1)
             }
         }
 
         Log.v(TAG, "RAW_RX MSG${msgType} ${length}b $raw_msg")
-        Log.d(TAG, HexDump.dump(raw_msg, 0, 0))
+        //Log.d(TAG, HexDump.dump(raw_msg, 0, 0))
 
         return Pair(raw_msg, msgType)
     }
@@ -150,7 +170,7 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
             val ins = client.getInputStream()
             val ous = client.getOutputStream()
 
-            sendMessage(Api.HelloRequest.newBuilder().setClientInfo("esphome rccar").build(), ous)
+            sendMessage(Api.HelloRequest.newBuilder().setClientInfo(ClientInfoString).build(), ous)
             val resHello = receiveMessage(ins) as Api.HelloResponse
 
             val str =
@@ -163,6 +183,7 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
             Log.v(TAG, "ccc " + resConn.invalidPassword)
 
             sendMessage(Api.DeviceInfoRequest.newBuilder().build(), ous)
+            listEntities()
 
             val camData: MutableMap<Int, ByteString?> = mutableMapOf()
 
@@ -192,18 +213,30 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
                             TAG,
                             "LightStateResponse key=${msg.key} brightness=${msg.brightness}"
                         )
-                        is Api.ListEntitiesCameraResponse -> Log.v(
-                            TAG,
-                            "ListEntitiesCameraResponse key=${msg.key} name=${msg.name} uniqueId=${msg.uniqueId}"
-                        )
+                        is Api.ListEntitiesCameraResponse -> {
+                            Log.v(
+                                TAG,
+                                "ListEntitiesCameraResponse key=${msg.key} name=${msg.name} uniqueId=${msg.uniqueId}"
+                            )
+                            entitiesCamera.put(msg.key, msg)
+                        }
                         is Api.ListEntitiesLightResponse -> Log.v(
                             TAG,
                             "ListEntitiesLightResponse key=${msg.key} name=${msg.name} uniqueId=${msg.uniqueId}"
                         )
+                        is Api.ListEntitiesServicesResponse -> {
+                            Log.v(
+                                TAG,
+                                "ListEntitiesServicesResponse key=${msg.key} name=${msg.name} ${msg.argsList}"
+                            )
+                            entitiesServices.put(msg.key, msg)
+                        }
+
                         is Api.SubscribeLogsResponse -> Log.v(
                             TAG,
                             "SubscribeLogsResponse tag=${msg.tag} ${msg.message}"
                         )
+
                     }
                 }
                 val txmsg = msgQueue.poll()
