@@ -24,6 +24,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    buildFeatures {
+        viewBinding true
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -54,6 +57,8 @@ dependencies {
     //implementation 'com.google.protobuf:protobuf-javalite:3.8.0' protobuf-lite is not enough...
     protobuf 'com.google.protobuf:protobuf-java:3.10.0'
     implementation("com.google.protobuf:protobuf-java:3.10.0")
+
+    implementation 'com.faendir.rhino:rhino-android:1.5.2'
 }
 
 protobuf {

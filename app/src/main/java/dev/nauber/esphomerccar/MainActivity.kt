@@ -2,29 +2,34 @@ package dev.nauber.esphomerccar
 
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.drawable.toDrawable
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import dev.nauber.esphomerccar.databinding.ActivityMainBinding
 import io.github.controlwear.virtual.joystick.android.JoystickView
 
 
 class MainActivity : AppCompatActivity() {
     val TAG = "MainActivity"
+    lateinit var controller: Controller
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        setSupportActionBar(findViewById(R.id.topAppBar))
+        val binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        setSupportActionBar(binding.topAppBar)
 
-        val imageView = findViewById<ImageView>(R.id.imageView)
+        val imageView = binding.contentMain.imageView
 
         val c = Communication("192.168.0.220", 6053, null)
         //val c = Communication("10.0.2.2", 6053, null)
+        controller = Controller(this, c)
 
-        findViewById<FloatingActionButton>(R.id.fab).setOnClickListener { view ->
+        binding.fab.setOnClickListener { view ->
 
             Snackbar.make(view, "HIHIHIH", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
@@ -48,14 +53,17 @@ class MainActivity : AppCompatActivity() {
             c.start()
             c.subscribeLogs()
             c.setImageStream(stream = true, single = false)
-            c.setHBridge(0, 0.0f, false)
         }
 
 
-        val joystick = findViewById<View>(R.id.joystickView) as JoystickView
+        val joystick = binding.contentMain.joystickView
         joystick.setOnMoveListener { angle, strength ->
-            c.setHBridge(0, (joystick.normalizedX - 50f) / 50.0f, false)
-            c.setHBridge(1, (joystick.normalizedY - 50f) / -50.0f, false)
+            val x = (joystick.normalizedX - 50f) / 50.0f
+            val y = (joystick.normalizedY - 50f) / -50.0f
+
+            controller.updateInput(mapOf("x" to x, "y" to y))
+
+
         }
     }
 }

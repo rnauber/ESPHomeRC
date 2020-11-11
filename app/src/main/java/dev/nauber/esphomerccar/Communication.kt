@@ -8,7 +8,9 @@ import com.google.protobuf.AbstractMessage
 import com.google.protobuf.ByteString
 import com.google.protobuf.CodedInputStream
 import org.apache.poi.util.HexDump
-import java.io.*
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.ConcurrentMap
@@ -58,6 +60,7 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
         val argIndex = Api.ExecuteServiceArgument.newBuilder().setInt(index)
         val argStrength = Api.ExecuteServiceArgument.newBuilder().setFloat(strength)
         val argBrake = Api.ExecuteServiceArgument.newBuilder().setBool(brake)
+        Log.d(TAG,"setHBridge($index, $strength, $brake) key=$key")
         msgQueue.add(
             Api.ExecuteServiceRequest.newBuilder().setKey(key).addArgs(argIndex)
                 .addArgs(argStrength)
@@ -244,6 +247,7 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
                     sendMessage(txmsg, ous)
                 if (stop.get())
                     break
+                Thread.yield()
             }
             client.close()
 
