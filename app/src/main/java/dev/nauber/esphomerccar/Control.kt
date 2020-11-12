@@ -23,23 +23,17 @@ class Controller(val context: android.content.Context, val comm: Communication) 
 
         outp = {};
         outp.display = "Hi from the controller, I am running because " + inp["reason"] ;
-        //outp.display += " inp=" + inp +"\n";
-        
-        //outp.display += " inp.=" + Object.keys(inp) +"\n";
-        
+                
         if (typeof i == "undefined") {
             i = 0;
         }
         i++;
         outp.display += " i=" + i +"\n";
         
-        //outp.display += " inp.user=" + inp.user +"\n";
-
-        x=inp.user.x;
-        
-        outp.display += " x=" + x +"\n";
-        outp.hbridge = [{"index":0, "strength":  x * 0.01, "brake":false}, 
-                        {"index":1, "strength": inp.user.y * 0.01, "brake":false}]
+        outp.hbridge = [{"index":0, "strength":  inp.user.x * 0.6, "brake":false}, 
+                        {"index":1, "strength": inp.user.y * 0.6, "brake":false},
+                        {"index":2, "strength": inp.user.y * 0.4, "brake":false},
+                        ]
         
     """.trimIndent()
 
@@ -77,10 +71,22 @@ class Controller(val context: android.content.Context, val comm: Communication) 
                 val hbridge = outp["hbridge"] as? Iterable<*>
                 hbridge?.forEach {
                     val hb = it as NativeObject
-                    val index = hb["index"] as? Int ?: 0
-                    val strength = hb["strength"] as? Float ?: 0.0f
-                    val brake = hb["brake"] as? Boolean ?: false
-                    comm.setHBridge(index = index, strength = strength, brake = brake)
+                    try {
+                        val index = Context.jsToJava(hb["index"], ScriptRuntime.IntegerClass) as Int
+                        val strength = try {
+                            Context.jsToJava(hb["strength"], ScriptRuntime.FloatClass) as Float
+                        } catch (e: EvaluatorException) {
+                            0.0f
+                        }
+                        val brake = try {
+                            Context.jsToJava(hb["brake"], ScriptRuntime.BooleanClass) as Boolean
+                        } catch (e: EvaluatorException) {
+                            false
+                        }
+
+                        comm.setHBridge(index = index, strength = strength, brake = brake)
+                    } catch (t: EvaluatorException) {
+                    }
                 }
 
             } catch (t: Throwable) {
