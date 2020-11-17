@@ -7,10 +7,12 @@ import android.view.View
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.drawable.toDrawable
+import androidx.preference.PreferenceManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import dev.nauber.esphomerccar.databinding.ActivityMainBinding
 import io.github.controlwear.virtual.joystick.android.JoystickView
+import java.net.URL
 
 
 class MainActivity : AppCompatActivity() {
@@ -25,8 +27,13 @@ class MainActivity : AppCompatActivity() {
 
         val imageView = binding.contentMain.imageView
 
-        val c = Communication("192.168.0.220", 6053, null)
-        //val c = Communication("10.0.2.2", 6053, null)
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this /* Activity context */)
+        val esphomeapiurl = sharedPreferences.getString("esphomeapiurl", "10.0.2.2")
+        val password = sharedPreferences.getString("esphomeapipassword", null)
+        val url = URL(esphomeapiurl)
+        val port = if (url.port == -1) 6053 else url.port
+        val c = Communication(url.host, port, password)
+
         controller = Controller(this, c)
 
         binding.fab.setOnClickListener { view ->
