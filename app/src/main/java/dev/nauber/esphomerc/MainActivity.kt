@@ -1,14 +1,13 @@
-package dev.nauber.esphomerccar
+package dev.nauber.esphomerc
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.navigation.NavigationView
-import dev.nauber.esphomerccar.databinding.ActivityMainBinding
+import dev.nauber.esphomerc.databinding.ActivityMainBinding
 
 
 class MainActivity : AppCompatActivity() {

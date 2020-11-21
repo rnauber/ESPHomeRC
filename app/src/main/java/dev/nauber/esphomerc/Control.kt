@@ -1,4 +1,4 @@
-package dev.nauber.esphomerccar
+package dev.nauber.esphomerc
 
 
 import android.util.Log

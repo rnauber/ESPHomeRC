@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="dev.nauber.esphomerccar">
+    package="dev.nauber.esphomerc">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -13,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ESPHomeRCCar">
         <activity
-            android:name=".MainActivity"
+            android:name="dev.nauber.esphomerc.MainActivity"
             android:label="@string/title_activity_main"
             android:theme="@style/Theme.ESPHomeRCCar.NoActionBar">
             <intent-filter>

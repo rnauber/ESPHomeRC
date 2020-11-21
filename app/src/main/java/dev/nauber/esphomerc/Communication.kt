@@ -1,4 +1,4 @@
-package dev.nauber.esphomerccar
+package dev.nauber.esphomerc
 
 
 import java.net.Socket
@@ -6,15 +6,11 @@ import Api
 import android.util.Log
 import com.google.protobuf.AbstractMessage
 import com.google.protobuf.ByteString
-import com.google.protobuf.CodedInputStream
-import org.apache.poi.util.HexDump
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 
@@ -167,11 +163,16 @@ class Communication(val url: String?, val password: String?) : Runnable {
     }
 
     private fun parseUrl(url: String?): Pair<String, Int> {
+
+        val defaultPort = 6053
+        val defaultHost = "127.0.0.1"
+
         if (url == null)
-            return  Pair("127.0.0.1", 6053)
+            return Pair(defaultHost, defaultPort)
         val parts = url.split(":")
-        val host = parts.get(0)
-        val port = parts.getOrNull(5)?.toInt() ?: 6053
+        val host = parts.getOrNull(0) ?: defaultHost
+        val port = parts.getOrNull(1)?.toInt() ?: defaultPort
+
         return Pair(host, port)
     }
 

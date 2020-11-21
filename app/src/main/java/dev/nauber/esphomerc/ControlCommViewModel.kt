@@ -1,4 +1,4 @@
-package dev.nauber.esphomerccar
+package dev.nauber.esphomerc
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -7,7 +7,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.preference.PreferenceManager
-import java.net.URL
 
 class ControlCommViewModel   : ViewModel() {
 

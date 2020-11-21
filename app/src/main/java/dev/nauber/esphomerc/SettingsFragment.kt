@@ -1,4 +1,4 @@
-package dev.nauber.esphomerccar
+package dev.nauber.esphomerc
 
 import android.os.Bundle
 import androidx.preference.PreferenceFragmentCompat

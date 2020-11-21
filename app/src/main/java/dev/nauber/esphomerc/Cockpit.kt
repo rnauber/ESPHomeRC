@@ -1,4 +1,4 @@
-package dev.nauber.esphomerccar
+package dev.nauber.esphomerc
 
 import android.graphics.Bitmap
 import android.os.Bundle
@@ -9,7 +9,7 @@ import android.view.ViewGroup
 import androidx.core.graphics.drawable.toDrawable
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import dev.nauber.esphomerccar.databinding.FragmentCockpitBinding
+import dev.nauber.esphomerc.databinding.FragmentCockpitBinding
 
 class Cockpit : Fragment() {
 
