@@ -6,6 +6,6 @@
             android:title="Cockpit XXX" />
         <item
             android:id="@id/settingsFragment"
-            android:title="@string/settings" />
+            android:title="@string/title_settings" />
     </group>
 </menu>
