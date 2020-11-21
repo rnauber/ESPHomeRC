@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:id="@+id/primary">
+        <item
+            android:id="@id/cockpit"
+            android:title="Cockpit XXX" />
+        <item
+            android:id="@id/settingsFragment"
+            android:title="@string/settings" />
+    </group>
+</menu>

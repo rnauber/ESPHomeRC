@@ -11,17 +11,18 @@ import org.apache.poi.util.HexDump
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 
-class Communication(val host: String, val port: Int, val password: String?) : Runnable {
+class Communication(val url: String?, val password: String?) : Runnable {
     val TAG = "Communication"
-    val ClientInfoString = "esphome rccar"
+    val ClientInfoString = "EspHomeRC"
 
-    val t = Thread(this)
+    val t: Thread = Thread(this, "CommunicationThread")
 
     val stop = AtomicBoolean(false)
 
@@ -60,7 +61,7 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
         val argIndex = Api.ExecuteServiceArgument.newBuilder().setInt(index)
         val argStrength = Api.ExecuteServiceArgument.newBuilder().setFloat(strength)
         val argBrake = Api.ExecuteServiceArgument.newBuilder().setBool(brake)
-        Log.d(TAG,"setHBridge($index, $strength, $brake) key=$key")
+        Log.d(TAG, "setHBridge($index, $strength, $brake) key=$key")
         msgQueue.add(
             Api.ExecuteServiceRequest.newBuilder().setKey(key).addArgs(argIndex)
                 .addArgs(argStrength)
@@ -157,7 +158,7 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
         return Pair(raw_msg, msgType)
     }
 
-    fun start() {
+    fun connect() {
         t.start()
     }
 
@@ -165,9 +166,18 @@ class Communication(val host: String, val port: Int, val password: String?) : Ru
         stop.set(true)
     }
 
+    private fun parseUrl(url: String?): Pair<String, Int> {
+        if (url == null)
+            return  Pair("127.0.0.1", 6053)
+        val parts = url.split(":")
+        val host = parts.get(0)
+        val port = parts.getOrNull(5)?.toInt() ?: 6053
+        return Pair(host, port)
+    }
+
     override fun run() {
         try {
-
+            val (host, port) = parseUrl(url)
             val client = Socket(host, port)
 
             val ins = client.getInputStream()

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/nav_graph.xml"
+    app:startDestination="@id/cockpit">
+
+    <fragment
+        android:id="@+id/cockpit"
+        android:name="dev.nauber.esphomerccar.Cockpit"
+        android:label="Cockpit" >
+        <action
+            android:id="@+id/action_cockpit_to_settingsFragment"
+            app:destination="@id/settingsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="dev.nauber.esphomerccar.SettingsFragment"
+        android:label="SettingsFragment" >
+        <action
+            android:id="@+id/action_settingsFragment_to_cockpit"
+            app:destination="@id/cockpit" />
+    </fragment>
+</navigation>

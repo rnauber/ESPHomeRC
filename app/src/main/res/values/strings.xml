@@ -30,4 +30,5 @@
     <string name="connection_header">Connection</string>
     <string name="esphomeapiurl_title">URL of the ESPHome API of the device</string>
     <string name="esphomeapipassword_title">ESPHome API password</string>
+    <string name="settings">Settings</string>
 </resources>
