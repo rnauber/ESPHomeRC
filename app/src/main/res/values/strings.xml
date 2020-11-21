@@ -5,4 +5,9 @@
     <string name="esphomeapiurl_title">URL of the ESPHome API of the device</string>
     <string name="esphomeapipassword_title">ESPHome API password</string>
     <string name="title_settings">Settings</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="connect_action">Connect</string>
+    <string name="title_cockpit">Cockpit</string>
+    <string name="title_connection">Connection</string>
 </resources>

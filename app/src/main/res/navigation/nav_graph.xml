@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/nav_graph.xml"
-    app:startDestination="@id/cockpit">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph.xml"
+    app:startDestination="@id/cockpitFragment">
 
     <fragment
-        android:id="@+id/cockpit"
+        android:id="@+id/cockpitFragment"
         android:name="dev.nauber.esphomerc.Cockpit"
-        android:label="Cockpit" >
+        android:label="@string/title_cockpit" >
         <action
             android:id="@+id/action_cockpit_to_settingsFragment"
             app:destination="@id/settingsFragment" />
@@ -14,9 +16,14 @@
     <fragment
         android:id="@+id/settingsFragment"
         android:name="dev.nauber.esphomerc.SettingsFragment"
-        android:label="SettingsFragment" >
+        android:label="@string/title_settings" >
         <action
             android:id="@+id/action_settingsFragment_to_cockpit"
-            app:destination="@id/cockpit" />
+            app:destination="@id/cockpitFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/connectionFragment"
+        android:name="dev.nauber.esphomerc.ConnectionFragment"
+        android:label="@string/title_connection"
+        tools:layout="@layout/fragment_connection" />
 </navigation>

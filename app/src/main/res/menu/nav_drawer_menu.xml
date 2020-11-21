@@ -2,10 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <group android:id="@+id/primary">
         <item
-            android:id="@id/cockpit"
-            android:title="Cockpit XXX" />
+            android:id="@id/cockpitFragment"
+            android:title="@string/title_cockpit" />
         <item
             android:id="@id/settingsFragment"
             android:title="@string/title_settings" />
+
+        <item
+            android:id="@id/connectionFragment"
+            android:title="@string/title_connection" />
     </group>
 </menu>

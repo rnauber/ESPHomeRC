@@ -11,11 +11,11 @@
         android:label="@string/app_name"
         android:roundIcon="@drawable/ic_logo2"
         android:supportsRtl="true"
-        android:theme="@style/Theme.ESPHomeRCCar">
+        android:theme="@style/Theme.ESPHomeRC">
         <activity
             android:name="dev.nauber.esphomerc.MainActivity"
             android:label="@string/title_activity_main"
-            android:theme="@style/Theme.ESPHomeRCCar.NoActionBar">
+            android:theme="@style/Theme.ESPHomeRC.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
