@@ -11,5 +11,9 @@
         <item
             android:id="@id/connectionFragment"
             android:title="@string/title_connection" />
+
+        <item
+            android:id="@id/controllerFragment"
+            android:title="@string/title_controller" />
     </group>
 </menu>

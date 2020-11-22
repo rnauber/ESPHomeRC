@@ -22,13 +22,19 @@ class ControlCommViewModel : ViewModel() {
 
     private val log = MutableLiveData<List<LogItem>>(listOf())
 
-    init{
+    init {
         Log.d("x", "created $this log=$log ")
     }
 
     fun getLog(): LiveData<List<LogItem>> {
         return log
     }
+
+    private val controllerOut = MutableLiveData<String>()
+    fun getControllerOut(): LiveData<String> {
+        return controllerOut
+    }
+
 
     fun reconnect(context: Context) {
 
@@ -55,10 +61,21 @@ class ControlCommViewModel : ViewModel() {
 
         controller = Controller(context, comm!!)
 
+        controller?.onLog = { logsrc, logmsg ->
+            val newitem = LogItem(logsrc, logmsg, "")
+            log.postValue(log.value?.plus(newitem) ?: listOf(newitem))
+        }
+
+        controller?.onOutput = { controllerOut.postValue(it) }
+
     }
 
     fun updateInput(map: Map<String, Float>) {
         controller?.updateInput(map)
+    }
+
+    fun updateControllerSrc(src: String) {
+        controller?.script = src
     }
 }
 

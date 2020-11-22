@@ -26,4 +26,9 @@
         android:name="dev.nauber.esphomerc.ConnectionFragment"
         android:label="@string/title_connection"
         tools:layout="@layout/fragment_connection" />
+    <fragment
+        android:id="@+id/controllerFragment"
+        android:name="dev.nauber.esphomerc.ControllerFragment"
+        android:label="@string/title_controller"
+        tools:layout="@layout/fragment_controller" />
 </navigation>

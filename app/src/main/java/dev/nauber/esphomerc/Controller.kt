@@ -10,33 +10,18 @@ import java.util.concurrent.LinkedBlockingQueue
 
 class Controller(val context: android.content.Context, val comm: Communication) : Runnable {
     val TAG = "Controller"
+    var script = ""
     var inpUser = ConcurrentHashMap<String, Float>()
-    val runQueue = LinkedBlockingQueue<String>()
+    private val runQueue = LinkedBlockingQueue<String>()
 
-    val t = Thread(this)
+    var onOutput: ((String) -> Unit)? = null
+    var onLog: ((String, String) -> Unit)? = null
+
+    private val t = Thread(this)
 
     init {
         t.start()
     }
-
-    val script = """
-
-        outp = {};
-        outp.display = "Hi from the controller, I am running because " + inp["reason"] ;
-                
-        if (typeof i == "undefined") {
-            i = 0;
-        }
-        i++;
-        outp.display += " i=" + i +"\n";
-        
-        //outp.hbridge = [{"index":0, "strength":  inp.user.x * 0.6, "brake":false}, 
-        //                {"index":1, "strength": inp.user.y * 0.6, "brake":false},
-        //                {"index":2, "strength": inp.user.y * 0.4, "brake":false},
-        //                ]
-        
-    """.trimIndent()
-
 
     override fun run() {
         val rhinoAndroidHelper = RhinoAndroidHelper(context)
@@ -46,6 +31,7 @@ class Controller(val context: android.content.Context, val comm: Communication) 
 
         while (true) {
             val reason = runQueue.take()
+            var output = ""
             try {
                 //prepare input
 
@@ -63,10 +49,10 @@ class Controller(val context: android.content.Context, val comm: Communication) 
                 val outp = scope.get("outp") as NativeObject
 
                 val log = outp["log"].toString()
-                Log.d(TAG, log)
+                onLog?.invoke("Control", log)
 
                 val display = outp["display"].toString()
-                Log.d(TAG, display)
+                output += display
 
                 val hbridge = outp["hbridge"] as? Iterable<*>
                 hbridge?.forEach {
@@ -91,7 +77,10 @@ class Controller(val context: android.content.Context, val comm: Communication) 
 
             } catch (t: Throwable) {
                 t.printStackTrace()
+                output += t.message
             }
+
+            onOutput?.invoke(output)
         }
         Context.exit()
     }
@@ -100,4 +89,29 @@ class Controller(val context: android.content.Context, val comm: Communication) 
         inpUser.putAll(map)
         runQueue.put("userinput")
     }
+
+    companion object {
+
+        val DEFAULTSCRIPT = """
+
+        outp = {};
+        outp.display = "Hi from the controller, I am running because " + inp["reason"] ;
+                
+        if (typeof i == "undefined") {
+            i = 0;
+        }
+        i++;
+        outp.display += " i=" + i +"\n";
+        
+        //outp.hbridge = [{"index":0, "strength":  inp.user.x * 0.6, "brake":false}, 
+        //                {"index":1, "strength": inp.user.y * 0.6, "brake":false},
+        //                {"index":2, "strength": inp.user.y * 0.4, "brake":false},
+        //                ]
+        
+    """.trimIndent()
+
+    }
+
+
 }
+
