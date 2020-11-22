@@ -7,11 +7,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.graphics.drawable.toDrawable
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import dev.nauber.esphomerc.databinding.FragmentCockpitBinding
 
-class Cockpit : Fragment() {
+class CockpitFragment : Fragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -21,7 +22,7 @@ class Cockpit : Fragment() {
 
         val imageView = binding.imageView
 
-        val viewModel = ViewModelProvider(this).get(ControlCommViewModel::class.java)
+        val viewModel: ControlCommViewModel by viewModels({requireActivity()})
         viewModel.getImage().observe(viewLifecycleOwner, Observer<Bitmap>() {
             imageView.setImageDrawable(it.toDrawable(resources))
         })
@@ -35,7 +36,7 @@ class Cockpit : Fragment() {
             viewModel.updateInput(mapOf("x" to x, "y" to y))
         }
 
-        viewModel.start(this.requireContext())
+        //viewModel.reconnect(this.requireContext())
 
         val view = binding.root
         return view

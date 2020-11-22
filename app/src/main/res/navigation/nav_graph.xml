@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/cockpitFragment"
-        android:name="dev.nauber.esphomerc.Cockpit"
+        android:name="dev.nauber.esphomerc.CockpitFragment"
         android:label="@string/title_cockpit" >
         <action
             android:id="@+id/action_cockpit_to_settingsFragment"

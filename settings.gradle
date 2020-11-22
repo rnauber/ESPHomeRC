@@ -1,2 +1,2 @@
 include ':app'
-rootProject.name = "ESPHome RC Car"
+rootProject.name = "ESPHomeRC"

@@ -17,15 +17,17 @@ import java.util.concurrent.atomic.AtomicBoolean
 class Communication(val url: String?, val password: String?) : Runnable {
     val TAG = "Communication"
     val ClientInfoString = "EspHomeRC"
+    val LOGSRCCOMM = "Communication"
+    val LOGSRCESPHOME = "ESPHOME"
 
-    val t: Thread = Thread(this, "CommunicationThread")
+    private val t: Thread = Thread(this, "CommunicationThread")
 
-    val stop = AtomicBoolean(false)
+    private val stop = AtomicBoolean(false)
 
     private val maxMsgLen = 1024 * 1024   // prevent OOM
 
     var onImage: ((ByteString) -> Unit)? = null
-    var onLog: ((String) -> Unit)? = null
+    var onLog: ((String, String) -> Unit)? = null
 
     private val msgQueue = ConcurrentLinkedQueue<AbstractMessage>()
     private val entitiesServices = ConcurrentHashMap<Int, Api.ListEntitiesServicesResponse>()
@@ -179,6 +181,7 @@ class Communication(val url: String?, val password: String?) : Runnable {
     override fun run() {
         try {
             val (host, port) = parseUrl(url)
+            onLog?.invoke(LOGSRCCOMM, "trying to connect to $host:$port")
             val client = Socket(host, port)
 
             val ins = client.getInputStream()
@@ -189,7 +192,7 @@ class Communication(val url: String?, val password: String?) : Runnable {
 
             val str =
                 "Connected to ${client.inetAddress}: ${resHello.serverInfo} API ${resHello.apiVersionMajor}:${resHello.apiVersionMinor}"
-            onLog?.invoke(str)
+            onLog?.invoke(LOGSRCCOMM, str)
             Log.v(TAG, str)
 
             sendMessage(Api.ConnectRequest.newBuilder().build(), ous)
@@ -222,7 +225,10 @@ class Communication(val url: String?, val password: String?) : Runnable {
                                 camData[msg.key] = null
                             }
                         }
-                        is Api.DeviceInfoResponse -> onLog?.invoke("Info: " + msg.compilationTime)
+                        is Api.DeviceInfoResponse -> onLog?.invoke(
+                            LOGSRCCOMM,
+                            "ESPHOME Version ${msg.esphomeVersion} ${msg.compilationTime} ${msg.model} ${msg.macAddress} "
+                        )
                         is Api.LightStateResponse -> Log.v(
                             TAG,
                             "LightStateResponse key=${msg.key} brightness=${msg.brightness}"
@@ -246,11 +252,13 @@ class Communication(val url: String?, val password: String?) : Runnable {
                             entitiesServices.put(msg.key, msg)
                         }
 
-                        is Api.SubscribeLogsResponse -> Log.v(
-                            TAG,
-                            "SubscribeLogsResponse tag=${msg.tag} ${msg.message}"
-                        )
-
+                        is Api.SubscribeLogsResponse -> {
+                            onLog?.invoke(LOGSRCESPHOME, "${msg.tag} ${msg.message}")
+                            Log.v(
+                                TAG,
+                                "SubscribeLogsResponse tag=${msg.tag} ${msg.message}"
+                            )
+                        }
                     }
                 }
                 val txmsg = msgQueue.poll()
@@ -263,6 +271,7 @@ class Communication(val url: String?, val password: String?) : Runnable {
             client.close()
 
         } catch (e: IOException) {
+            onLog?.invoke(LOGSRCCOMM, "Error: ${e.message}")
             e.printStackTrace()
         }
     }

@@ -30,10 +30,10 @@ class Controller(val context: android.content.Context, val comm: Communication) 
         i++;
         outp.display += " i=" + i +"\n";
         
-        outp.hbridge = [{"index":0, "strength":  inp.user.x * 0.6, "brake":false}, 
-                        {"index":1, "strength": inp.user.y * 0.6, "brake":false},
-                        {"index":2, "strength": inp.user.y * 0.4, "brake":false},
-                        ]
+        //outp.hbridge = [{"index":0, "strength":  inp.user.x * 0.6, "brake":false}, 
+        //                {"index":1, "strength": inp.user.y * 0.6, "brake":false},
+        //                {"index":2, "strength": inp.user.y * 0.4, "brake":false},
+        //                ]
         
     """.trimIndent()
 

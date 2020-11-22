@@ -5,15 +5,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.lifecycle.LiveData
 
-import dev.nauber.esphomerc.dummy.DummyContent.DummyItem
-
-/**
- * [RecyclerView.Adapter] that can display a [DummyItem].
- * TODO: Replace the implementation with code for your data type.
- */
 class MyLogEntryRecyclerViewAdapter(
-    private val values: List<DummyItem>
+    private val values: LiveData<List<LogItem>>
 ) : RecyclerView.Adapter<MyLogEntryRecyclerViewAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -23,12 +18,15 @@ class MyLogEntryRecyclerViewAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = values[position]
-        holder.idView.text = item.id
-        holder.contentView.text = item.content
+        val item = values.value?.get(position)
+        if (item != null) {
+            holder.idView.text = item.source
+            holder.contentView.text = item.content
+        }
+
     }
 
-    override fun getItemCount(): Int = values.size
+    override fun getItemCount(): Int = values.value?.size ?: 0
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val idView: TextView = view.findViewById(R.id.item_number)
