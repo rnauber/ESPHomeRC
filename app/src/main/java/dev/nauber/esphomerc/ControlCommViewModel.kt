@@ -59,6 +59,7 @@ class ControlCommViewModel : ViewModel() {
         comm?.subscribeLogs()
         comm?.setImageStream(stream = true, single = false)
 
+        controller?.stop()
         controller = Controller(context, comm!!)
 
         controller?.onLog = { logsrc, logmsg ->

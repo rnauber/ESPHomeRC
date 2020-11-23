@@ -15,11 +15,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 
 class Communication(val url: String?, val password: String?) : Runnable {
-    val TAG = "Communication"
-    val ClientInfoString = "EspHomeRC"
-    val LOGSRCCOMM = "Communication"
-    val LOGSRCESPHOME = "ESPHOME"
-
     private val t: Thread = Thread(this, "CommunicationThread")
 
     private val stop = AtomicBoolean(false)
@@ -59,7 +54,7 @@ class Communication(val url: String?, val password: String?) : Runnable {
         val argIndex = Api.ExecuteServiceArgument.newBuilder().setInt(index)
         val argStrength = Api.ExecuteServiceArgument.newBuilder().setFloat(strength)
         val argBrake = Api.ExecuteServiceArgument.newBuilder().setBool(brake)
-        Log.d(TAG, "setHBridge($index, $strength, $brake) key=$key")
+        Log.d(LOGTAG, "setHBridge($index, $strength, $brake) key=$key")
         msgQueue.add(
             Api.ExecuteServiceRequest.newBuilder().setKey(key).addArgs(argIndex)
                 .addArgs(argStrength)
@@ -84,7 +79,7 @@ class Communication(val url: String?, val password: String?) : Runnable {
         if (messageType != null)
             sendRawMessage(m.toByteArray(), messageType, ous)
 
-        Log.v(TAG, "TX_MSG${messageType} ${m.javaClass}")
+        Log.v(LOGTAG, "TX_MSG${messageType} ${m.javaClass}")
     }
 
     private fun sendRawMessage(raw: ByteArray, message_type: Int, ous: OutputStream) {
@@ -118,42 +113,42 @@ class Communication(val url: String?, val password: String?) : Runnable {
         } catch (e: com.google.protobuf.InvalidProtocolBufferException) {
             e.printStackTrace()
         }
-        Log.v(TAG, "RX MSG${msgType} ${msg?.javaClass}")
+        Log.v(LOGTAG, "RX MSG${msgType} ${msg?.javaClass}")
         return msg
     }
 
     private fun receiveRawMessage(ins: InputStream): Pair<ByteArray, Int> {
         if (ins.read() != 0x00) {
-            Log.e(TAG, "Invalid preamble")
+            Log.e(LOGTAG, "Invalid preamble")
         }
 
         val length = readVarInt(ins)
         val msgType = readVarInt(ins)
 
-        Log.v(TAG, "RAW_RX try to read MSG${msgType} with ${length} bytes")
+        Log.v(LOGTAG, "RAW_RX try to read MSG${msgType} with ${length} bytes")
         if (length > maxMsgLen) {
-            Log.e(TAG, "Ignoring message larger than ${maxMsgLen} bytes: $length bytes.")
+            Log.e(LOGTAG, "Ignoring message larger than ${maxMsgLen} bytes: $length bytes.")
             return Pair(ByteArray(0), -1)
         }
 
-        val raw_msg = ByteArray(length)
+        val rawMsg = ByteArray(length)
 
         var pos = 0
         while (pos < length) {
-            val read = ins.read(raw_msg, pos, length - pos)
-            Log.d(TAG, "RAW_RX read ${read} bytes pos=$pos")
+            val read = ins.read(rawMsg, pos, length - pos)
+            Log.d(LOGTAG, "RAW_RX read $read bytes pos=$pos")
             if (read > 0)
                 pos += read
             else {
-                Log.e(TAG, "Reading failed read=$read!")
+                Log.e(LOGTAG, "Reading failed read=$read!")
                 return Pair(ByteArray(0), -1)
             }
         }
 
-        Log.v(TAG, "RAW_RX MSG${msgType} ${length}b $raw_msg")
+        Log.v(LOGTAG, "RAW_RX MSG${msgType} ${length}b $rawMsg")
         //Log.d(TAG, HexDump.dump(raw_msg, 0, 0))
 
-        return Pair(raw_msg, msgType)
+        return Pair(rawMsg, msgType)
     }
 
     fun connect() {
@@ -181,7 +176,7 @@ class Communication(val url: String?, val password: String?) : Runnable {
     override fun run() {
         try {
             val (host, port) = parseUrl(url)
-            onLog?.invoke(LOGSRCCOMM, "trying to connect to $host:$port")
+            onLog?.invoke(LOGTAG, "trying to connect to $host:$port")
             val client = Socket(host, port)
 
             val ins = client.getInputStream()
@@ -192,12 +187,12 @@ class Communication(val url: String?, val password: String?) : Runnable {
 
             val str =
                 "Connected to ${client.inetAddress}: ${resHello.serverInfo} API ${resHello.apiVersionMajor}:${resHello.apiVersionMinor}"
-            onLog?.invoke(LOGSRCCOMM, str)
-            Log.v(TAG, str)
+            onLog?.invoke(LOGTAG, str)
+            Log.v(LOGTAG, str)
 
             sendMessage(Api.ConnectRequest.newBuilder().build(), ous)
             val resConn = receiveMessage(ins) as Api.ConnectResponse
-            Log.v(TAG, "ccc " + resConn.invalidPassword)
+            Log.v(LOGTAG, "ccc " + resConn.invalidPassword)
 
             sendMessage(Api.DeviceInfoRequest.newBuilder().build(), ous)
             listEntities()
@@ -213,7 +208,7 @@ class Communication(val url: String?, val password: String?) : Runnable {
                         )
                         is Api.CameraImageResponse -> {
                             Log.v(
-                                TAG,
+                                LOGTAG,
                                 "Image key=${msg.key} done=${msg.done} data.len=${msg.data.size()} "
                             )
                             if (camData[msg.key] != null)
@@ -226,36 +221,36 @@ class Communication(val url: String?, val password: String?) : Runnable {
                             }
                         }
                         is Api.DeviceInfoResponse -> onLog?.invoke(
-                            LOGSRCCOMM,
+                            LOGTAG,
                             "ESPHOME Version ${msg.esphomeVersion} ${msg.compilationTime} ${msg.model} ${msg.macAddress} "
                         )
                         is Api.LightStateResponse -> Log.v(
-                            TAG,
+                            LOGTAG,
                             "LightStateResponse key=${msg.key} brightness=${msg.brightness}"
                         )
                         is Api.ListEntitiesCameraResponse -> {
                             Log.v(
-                                TAG,
+                                LOGTAG,
                                 "ListEntitiesCameraResponse key=${msg.key} name=${msg.name} uniqueId=${msg.uniqueId}"
                             )
                             entitiesCamera.put(msg.key, msg)
                         }
                         is Api.ListEntitiesLightResponse -> Log.v(
-                            TAG,
+                            LOGTAG,
                             "ListEntitiesLightResponse key=${msg.key} name=${msg.name} uniqueId=${msg.uniqueId}"
                         )
                         is Api.ListEntitiesServicesResponse -> {
                             Log.v(
-                                TAG,
+                                LOGTAG,
                                 "ListEntitiesServicesResponse key=${msg.key} name=${msg.name} ${msg.argsList}"
                             )
                             entitiesServices.put(msg.key, msg)
                         }
 
                         is Api.SubscribeLogsResponse -> {
-                            onLog?.invoke(LOGSRCESPHOME, "${msg.tag} ${msg.message}")
+                            onLog?.invoke(LOGTAGESPHOME, "${msg.tag} ${msg.message}")
                             Log.v(
-                                TAG,
+                                LOGTAG,
                                 "SubscribeLogsResponse tag=${msg.tag} ${msg.message}"
                             )
                         }
@@ -266,14 +261,20 @@ class Communication(val url: String?, val password: String?) : Runnable {
                     sendMessage(txmsg, ous)
                 if (stop.get())
                     break
-                Thread.yield()
+                //Thread.yield()
             }
+            onLog?.invoke(LOGTAG, "Communication stopped!")
             client.close()
 
         } catch (e: IOException) {
-            onLog?.invoke(LOGSRCCOMM, "Error: ${e.message}")
+            onLog?.invoke(LOGTAG, "Error: ${e.message}")
             e.printStackTrace()
         }
     }
 
+    companion object {
+        const val LOGTAG = "Communication"
+        const val ClientInfoString = "EspHomeRC"
+        const val LOGTAGESPHOME = "ESPHOME"
+    }
 }

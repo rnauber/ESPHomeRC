@@ -9,7 +9,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.preference.PreferenceManager
 import dev.nauber.esphomerc.databinding.FragmentControllerBinding
-
 class ControllerFragment : Fragment() {
 
     override fun onCreateView(
@@ -24,8 +23,10 @@ class ControllerFragment : Fragment() {
         val controllerSrc = sharedPreferences.getString("controller_src", Controller.DEFAULTSCRIPT)
 
         binding.code.setText(controllerSrc)
+        //TODO support multiple code slots
+
         binding.code.doAfterTextChanged { ed ->
-            val src =  ed.toString()
+            val src = ed.toString()
             sharedPreferences.edit().putString("controller_src", src).apply()
             viewModel.updateControllerSrc(src)
         }

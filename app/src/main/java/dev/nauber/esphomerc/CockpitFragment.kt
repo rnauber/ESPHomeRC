@@ -35,8 +35,6 @@ class CockpitFragment : Fragment() {
             viewModel.updateInput(mapOf("x" to x, "y" to y))
         }
 
-        //viewModel.reconnect(this.requireContext())
-
         val view = binding.root
         return view
     }

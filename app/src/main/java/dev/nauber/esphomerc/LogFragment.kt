@@ -37,7 +37,7 @@ class LogFragment : Fragment() {
         // Set the adapter
         if (view is RecyclerView) {
 
-            val viewModel: ControlCommViewModel by viewModels({requireActivity()})
+            val viewModel: ControlCommViewModel by viewModels({ requireActivity() })
 
             with(view) {
                 layoutManager = when {
@@ -47,8 +47,9 @@ class LogFragment : Fragment() {
                 adapter = MyLogEntryRecyclerViewAdapter(viewModel.getLog())
             }
 
-            viewModel.getLog().observe(viewLifecycleOwner, Observer<List<LogItem>> {
-                view.adapter?.notifyDataSetChanged()
+            viewModel.getLog().observe(viewLifecycleOwner, {
+                view.adapter?.notifyItemInserted(it.size - 1) //added last item
+                view.scrollToPosition(it.size - 1)
             })
         }
         return view

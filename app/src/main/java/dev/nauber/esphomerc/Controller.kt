@@ -1,7 +1,6 @@
 package dev.nauber.esphomerc
 
 
-import android.util.Log
 import com.faendir.rhino_android.RhinoAndroidHelper
 import org.mozilla.javascript.*
 import java.util.concurrent.ConcurrentHashMap
@@ -9,7 +8,6 @@ import java.util.concurrent.LinkedBlockingQueue
 
 
 class Controller(val context: android.content.Context, val comm: Communication) : Runnable {
-    val TAG = "Controller"
     var script = ""
     var inpUser = ConcurrentHashMap<String, Float>()
     private val runQueue = LinkedBlockingQueue<String>()
@@ -31,6 +29,9 @@ class Controller(val context: android.content.Context, val comm: Communication) 
 
         while (true) {
             val reason = runQueue.take()
+            if (reason == "stop")
+                break
+
             var output = ""
             try {
                 //prepare input
@@ -48,11 +49,13 @@ class Controller(val context: android.content.Context, val comm: Communication) 
 
                 val outp = scope.get("outp") as NativeObject
 
-                val log = outp["log"].toString()
-                onLog?.invoke("Control", log)
+                val log = outp["log"]
+                if (log != null)
+                    onLog?.invoke(LOGTAG, log.toString())
 
-                val display = outp["display"].toString()
-                output += display
+                val display = outp["display"]
+                if (display != null)
+                    output += display.toString() + "\n"
 
                 val hbridge = outp["hbridge"] as? Iterable<*>
                 hbridge?.forEach {
@@ -69,19 +72,21 @@ class Controller(val context: android.content.Context, val comm: Communication) 
                         } catch (e: EvaluatorException) {
                             false
                         }
-
+                        output += "setHBridge(index = $index, strength = $strength, brake = $brake) \n"
                         comm.setHBridge(index = index, strength = strength, brake = brake)
+
                     } catch (t: EvaluatorException) {
                     }
                 }
 
             } catch (t: Throwable) {
                 t.printStackTrace()
-                output += t.message
+                output += "${t.message} \n ${t.stackTrace[0]} \n"
             }
 
             onOutput?.invoke(output)
         }
+        onLog?.invoke(LOGTAG, "Control stopped!")
         Context.exit()
     }
 
@@ -90,8 +95,12 @@ class Controller(val context: android.content.Context, val comm: Communication) 
         runQueue.put("userinput")
     }
 
-    companion object {
+    fun stop() {
+        runQueue.put("stop")
+    }
 
+    companion object {
+        val LOGTAG="Control"
         val DEFAULTSCRIPT = """
 
         outp = {};
@@ -103,15 +112,14 @@ class Controller(val context: android.content.Context, val comm: Communication) 
         i++;
         outp.display += " i=" + i +"\n";
         
-        //outp.hbridge = [{"index":0, "strength":  inp.user.x * 0.6, "brake":false}, 
+        outp.hbridge = [
+        //                {"index":0, "strength": inp.user.x * 0.6, "brake":false}, 
         //                {"index":1, "strength": inp.user.y * 0.6, "brake":false},
         //                {"index":2, "strength": inp.user.y * 0.4, "brake":false},
-        //                ]
+                       ]
         
     """.trimIndent()
 
     }
-
-
 }
 
