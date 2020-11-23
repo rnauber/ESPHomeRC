@@ -9,14 +9,15 @@ import com.google.protobuf.ByteString
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.util.concurrent.BlockingQueue
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
 
 
-class Communication(val url: String?, val password: String?) : Runnable {
-    private val t: Thread = Thread(this, "CommunicationThread")
-
+class Communication(val url: String?, val password: String?) {
     private val stop = AtomicBoolean(false)
 
     private val maxMsgLen = 1024 * 1024   // prevent OOM
@@ -24,9 +25,119 @@ class Communication(val url: String?, val password: String?) : Runnable {
     var onImage: ((ByteString) -> Unit)? = null
     var onLog: ((String, String) -> Unit)? = null
 
-    private val msgQueue = ConcurrentLinkedQueue<AbstractMessage>()
+    private val msgQueue = LinkedBlockingQueue<AbstractMessage>()
     private val entitiesServices = ConcurrentHashMap<Int, Api.ListEntitiesServicesResponse>()
     private val entitiesCamera = ConcurrentHashMap<Int, Api.ListEntitiesCameraResponse>()
+
+    private val threadTx = thread(name = "CommunicationTxThread") {
+        try {
+            val (host, port) = parseUrl(url)
+            onLog?.invoke(LOGTAG, "trying to connect to $host:$port")
+            val client = Socket(host, port)
+
+            val ins = client.getInputStream()
+            val ous = client.getOutputStream()
+
+            sendMessage(Api.HelloRequest.newBuilder().setClientInfo(ClientInfoString).build(), ous)
+            val resHello = receiveMessage(ins) as Api.HelloResponse
+
+            val str =
+                "Connected to ${client.inetAddress}: ${resHello.serverInfo} API ${resHello.apiVersionMajor}:${resHello.apiVersionMinor}"
+            onLog?.invoke(LOGTAG, str)
+            Log.v(LOGTAG, str)
+
+            sendMessage(Api.ConnectRequest.newBuilder().build(), ous)
+            val resConn = receiveMessage(ins) as Api.ConnectResponse
+            Log.v(LOGTAG, "ccc " + resConn.invalidPassword)
+
+            sendMessage(Api.DeviceInfoRequest.newBuilder().build(), ous)
+            listEntities()
+
+
+            thread(name = "CommunicationRxThread") {
+                val camData: MutableMap<Int, ByteString?> = mutableMapOf()
+
+                while (true) {
+                    try {
+                        val msg = receiveMessage(ins)
+                        when (msg) {
+                            is Api.PingRequest -> sendMessage(
+                                Api.PingResponse.newBuilder().build(), ous
+                            )
+                            is Api.CameraImageResponse -> {
+                                Log.v(
+                                    LOGTAG,
+                                    "Image key=${msg.key} done=${msg.done} data.len=${msg.data.size()} "
+                                )
+                                if (camData[msg.key] != null)
+                                    camData[msg.key] = camData[msg.key]!!.concat(msg.data)
+                                else
+                                    camData[msg.key] = msg.data
+                                if (msg.done and (camData[msg.key] != null)) {
+                                    onImage?.invoke(camData[msg.key]!!)
+                                    camData[msg.key] = null
+                                }
+                            }
+                            is Api.DeviceInfoResponse -> onLog?.invoke(
+                                LOGTAG,
+                                "ESPHOME Version ${msg.esphomeVersion} ${msg.compilationTime} ${msg.model} ${msg.macAddress} "
+                            )
+                            is Api.LightStateResponse -> Log.v(
+                                LOGTAG,
+                                "LightStateResponse key=${msg.key} brightness=${msg.brightness}"
+                            )
+                            is Api.ListEntitiesCameraResponse -> {
+                                Log.v(
+                                    LOGTAG,
+                                    "ListEntitiesCameraResponse key=${msg.key} name=${msg.name} uniqueId=${msg.uniqueId}"
+                                )
+                                entitiesCamera.put(msg.key, msg)
+                            }
+                            is Api.ListEntitiesLightResponse -> Log.v(
+                                LOGTAG,
+                                "ListEntitiesLightResponse key=${msg.key} name=${msg.name} uniqueId=${msg.uniqueId}"
+                            )
+                            is Api.ListEntitiesServicesResponse -> {
+                                Log.v(
+                                    LOGTAG,
+                                    "ListEntitiesServicesResponse key=${msg.key} name=${msg.name} ${msg.argsList}"
+                                )
+                                entitiesServices.put(msg.key, msg)
+                            }
+
+                            is Api.SubscribeLogsResponse -> {
+                                onLog?.invoke(LOGTAGESPHOME, "${msg.tag} ${msg.message}")
+                                Log.v(LOGTAG, "SubscribeLogsResponse tag=${msg.tag} ${msg.message}")
+
+                            }
+                        }
+                    } catch (e: IOException) {
+                        onLog?.invoke(LOGTAG, "Error (RX): ${e.message}")
+                        e.printStackTrace()
+                    }
+                    if (stop.get())
+                        break
+                }
+
+                onLog?.invoke(LOGTAG, "Communication (RX) stopped!")
+            }
+
+
+            while (true) {
+                val txmsg = msgQueue.take()
+                if (txmsg != null)
+                    sendMessage(txmsg, ous)
+                if (stop.get())
+                    break
+            }
+
+            onLog?.invoke(LOGTAG, "Communication (TX) stopped!")
+            client.close()
+        } catch (e: IOException) {
+            onLog?.invoke(LOGTAG, "Error (TX): ${e.message}")
+            e.printStackTrace()
+        }
+    }
 
     fun setImageStream(stream: Boolean, single: Boolean) {
         msgQueue.add(
@@ -152,129 +263,31 @@ class Communication(val url: String?, val password: String?) : Runnable {
     }
 
     fun connect() {
-        t.start()
+        threadTx.start()
     }
 
     fun stop() {
         stop.set(true)
     }
 
-    private fun parseUrl(url: String?): Pair<String, Int> {
-
-        val defaultPort = 6053
-        val defaultHost = "127.0.0.1"
-
-        if (url == null)
-            return Pair(defaultHost, defaultPort)
-        val parts = url.split(":")
-        val host = parts.getOrNull(0) ?: defaultHost
-        val port = parts.getOrNull(1)?.toInt() ?: defaultPort
-
-        return Pair(host, port)
-    }
-
-    override fun run() {
-        try {
-            val (host, port) = parseUrl(url)
-            onLog?.invoke(LOGTAG, "trying to connect to $host:$port")
-            val client = Socket(host, port)
-
-            val ins = client.getInputStream()
-            val ous = client.getOutputStream()
-
-            sendMessage(Api.HelloRequest.newBuilder().setClientInfo(ClientInfoString).build(), ous)
-            val resHello = receiveMessage(ins) as Api.HelloResponse
-
-            val str =
-                "Connected to ${client.inetAddress}: ${resHello.serverInfo} API ${resHello.apiVersionMajor}:${resHello.apiVersionMinor}"
-            onLog?.invoke(LOGTAG, str)
-            Log.v(LOGTAG, str)
-
-            sendMessage(Api.ConnectRequest.newBuilder().build(), ous)
-            val resConn = receiveMessage(ins) as Api.ConnectResponse
-            Log.v(LOGTAG, "ccc " + resConn.invalidPassword)
-
-            sendMessage(Api.DeviceInfoRequest.newBuilder().build(), ous)
-            listEntities()
-
-            val camData: MutableMap<Int, ByteString?> = mutableMapOf()
-
-            while (true) {
-                if (ins.available() > 0) {
-                    val msg = receiveMessage(ins)
-                    when (msg) {
-                        is Api.PingRequest -> sendMessage(
-                            Api.PingResponse.newBuilder().build(), ous
-                        )
-                        is Api.CameraImageResponse -> {
-                            Log.v(
-                                LOGTAG,
-                                "Image key=${msg.key} done=${msg.done} data.len=${msg.data.size()} "
-                            )
-                            if (camData[msg.key] != null)
-                                camData[msg.key] = camData[msg.key]!!.concat(msg.data)
-                            else
-                                camData[msg.key] = msg.data
-                            if (msg.done and (camData[msg.key] != null)) {
-                                onImage?.invoke(camData[msg.key]!!)
-                                camData[msg.key] = null
-                            }
-                        }
-                        is Api.DeviceInfoResponse -> onLog?.invoke(
-                            LOGTAG,
-                            "ESPHOME Version ${msg.esphomeVersion} ${msg.compilationTime} ${msg.model} ${msg.macAddress} "
-                        )
-                        is Api.LightStateResponse -> Log.v(
-                            LOGTAG,
-                            "LightStateResponse key=${msg.key} brightness=${msg.brightness}"
-                        )
-                        is Api.ListEntitiesCameraResponse -> {
-                            Log.v(
-                                LOGTAG,
-                                "ListEntitiesCameraResponse key=${msg.key} name=${msg.name} uniqueId=${msg.uniqueId}"
-                            )
-                            entitiesCamera.put(msg.key, msg)
-                        }
-                        is Api.ListEntitiesLightResponse -> Log.v(
-                            LOGTAG,
-                            "ListEntitiesLightResponse key=${msg.key} name=${msg.name} uniqueId=${msg.uniqueId}"
-                        )
-                        is Api.ListEntitiesServicesResponse -> {
-                            Log.v(
-                                LOGTAG,
-                                "ListEntitiesServicesResponse key=${msg.key} name=${msg.name} ${msg.argsList}"
-                            )
-                            entitiesServices.put(msg.key, msg)
-                        }
-
-                        is Api.SubscribeLogsResponse -> {
-                            onLog?.invoke(LOGTAGESPHOME, "${msg.tag} ${msg.message}")
-                            Log.v(
-                                LOGTAG,
-                                "SubscribeLogsResponse tag=${msg.tag} ${msg.message}"
-                            )
-                        }
-                    }
-                }
-                val txmsg = msgQueue.poll()
-                if (txmsg != null)
-                    sendMessage(txmsg, ous)
-                if (stop.get())
-                    break
-                //Thread.yield()
-            }
-            onLog?.invoke(LOGTAG, "Communication stopped!")
-            client.close()
-
-        } catch (e: IOException) {
-            onLog?.invoke(LOGTAG, "Error: ${e.message}")
-            e.printStackTrace()
-        }
-    }
-
     companion object {
         const val LOGTAG = "Communication"
         const val ClientInfoString = "EspHomeRC"
         const val LOGTAGESPHOME = "ESPHOME"
+
+
+        private fun parseUrl(url: String?): Pair<String, Int> {
+
+            val defaultPort = 6053
+            val defaultHost = "127.0.0.1"
+
+            if (url == null)
+                return Pair(defaultHost, defaultPort)
+            val parts = url.split(":")
+            val host = parts.getOrNull(0) ?: defaultHost
+            val port = parts.getOrNull(1)?.toInt() ?: defaultPort
+
+            return Pair(host, port)
+        }
     }
 }
