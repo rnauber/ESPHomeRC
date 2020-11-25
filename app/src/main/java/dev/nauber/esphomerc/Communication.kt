@@ -1,7 +1,6 @@
 package dev.nauber.esphomerc
 
 
-import java.net.Socket
 import Api
 import android.util.Log
 import com.google.protobuf.AbstractMessage
@@ -9,9 +8,8 @@ import com.google.protobuf.ByteString
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.util.concurrent.BlockingQueue
+import java.net.Socket
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
@@ -29,7 +27,7 @@ class Communication(val url: String?, val password: String?) {
     private val entitiesServices = ConcurrentHashMap<Int, Api.ListEntitiesServicesResponse>()
     private val entitiesCamera = ConcurrentHashMap<Int, Api.ListEntitiesCameraResponse>()
 
-    private val threadTx = thread(name = "CommunicationTxThread") {
+    private val threadTx = thread(name = "CommunicationTxThread", start = false) {
         try {
             val (host, port) = parseUrl(url)
             onLog?.invoke(LOGTAG, "trying to connect to $host:$port")

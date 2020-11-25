@@ -4,19 +4,20 @@
     android:id="@+id/frameLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ControllerFragment"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:context=".ControllerFragment">
 
     <com.sungbin.texteditor.library.SimpleCodeEditor
         android:id="@+id/code"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:inputType="textMultiLine|textNoSuggestions|textImeMultiLine" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment"
         android:name="dev.nauber.esphomerc.ControllerOutputFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="2" />
+        android:layout_weight="4" />
 </LinearLayout>

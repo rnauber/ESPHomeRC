@@ -11,4 +11,5 @@
     <string name="title_cockpit">Cockpit</string>
     <string name="title_connection">Connection</string>
     <string name="title_controller">Controller</string>
+    <string name="reconnect">Reconnect</string>
 </resources>
