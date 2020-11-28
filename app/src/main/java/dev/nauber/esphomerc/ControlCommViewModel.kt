@@ -15,16 +15,13 @@ class ControlCommViewModel : ViewModel() {
 
     private var controller: Controller? = null
     private val image = MutableLiveData<Bitmap>()
+    private var imageStreamLastReq = 0L
 
     fun getImage(): LiveData<Bitmap> {
         return image
     }
 
     private val log = MutableLiveData<List<LogItem>>(listOf())
-
-    init {
-        Log.d("x", "created $this log=$log ")
-    }
 
     fun getLog(): LiveData<List<LogItem>> {
         return log
@@ -34,7 +31,6 @@ class ControlCommViewModel : ViewModel() {
     fun getControllerOut(): LiveData<String> {
         return controllerOut
     }
-
 
     fun reconnect(context: Context) {
 
@@ -48,6 +44,12 @@ class ControlCommViewModel : ViewModel() {
         comm?.onImage = { img ->
             val bm = BitmapFactory.decodeByteArray(img.toByteArray(), 0, img.size())
             image.postValue(bm)
+
+            val now = System.currentTimeMillis()
+            if (now - imageStreamLastReq > RENEW_STREAMING_MS) {
+                comm?.setImageStream(stream = true, single = false)
+                imageStreamLastReq = now
+            }
         }
 
         comm?.onLog = { logsrc, logmsg ->
@@ -57,7 +59,7 @@ class ControlCommViewModel : ViewModel() {
 
         comm?.connect()
         comm?.subscribeLogs()
-        comm?.setImageStream(stream = true, single = false)
+        comm?.setImageStream(stream = false, single = true)// trigger image request
 
         controller?.stop()
         controller = Controller(context, comm!!)
@@ -77,6 +79,10 @@ class ControlCommViewModel : ViewModel() {
 
     fun updateControllerSrc(src: String) {
         controller?.script = src
+    }
+
+    companion object {
+        val RENEW_STREAMING_MS = 3000
     }
 }
 

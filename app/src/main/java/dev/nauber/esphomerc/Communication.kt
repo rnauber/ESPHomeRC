@@ -18,8 +18,6 @@ import kotlin.concurrent.thread
 class Communication(val url: String?, val password: String?) {
     private val stop = AtomicBoolean(false)
 
-    private val maxMsgLen = 1024 * 1024   // prevent OOM
-
     var onImage: ((ByteString) -> Unit)? = null
     var onLog: ((String, String) -> Unit)? = null
 
@@ -245,7 +243,7 @@ class Communication(val url: String?, val password: String?) {
         var pos = 0
         while (pos < length) {
             val read = ins.read(rawMsg, pos, length - pos)
-            Log.d(LOGTAG, "RAW_RX read $read bytes pos=$pos")
+            //Log.d(LOGTAG, "RAW_RX read $read bytes pos=$pos")
             if (read > 0)
                 pos += read
             else {
@@ -272,7 +270,7 @@ class Communication(val url: String?, val password: String?) {
         const val LOGTAG = "Communication"
         const val ClientInfoString = "EspHomeRC"
         const val LOGTAGESPHOME = "ESPHOME"
-
+        private const val maxMsgLen = 1024 * 1024   // prevent OOM
 
         private fun parseUrl(url: String?): Pair<String, Int> {
 

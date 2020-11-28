@@ -12,4 +12,5 @@
     <string name="title_connection">Connection</string>
     <string name="title_controller">Controller</string>
     <string name="reconnect">Reconnect</string>
+    <string name="live_camera_view">Live Camera View</string>
 </resources>
