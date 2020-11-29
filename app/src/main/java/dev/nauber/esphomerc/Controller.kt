@@ -5,11 +5,12 @@ import com.faendir.rhino_android.RhinoAndroidHelper
 import org.mozilla.javascript.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicReference
 
 
 class Controller(val context: android.content.Context, val comm: Communication) : Runnable {
-    var script = ""
-    var inpUser = ConcurrentHashMap<String, Float>()
+    private var script = AtomicReference<String>()
+    private var inpUser = ConcurrentHashMap<String, Float>()
     private val runQueue = LinkedBlockingQueue<String>()
 
     var onOutput: ((String) -> Unit)? = null
@@ -45,7 +46,7 @@ class Controller(val context: android.content.Context, val comm: Communication) 
 
                 ScriptableObject.putProperty(scope, "inp", inpObject)
 
-                rhinoContext.evaluateString(scope, script, "<control_script>", 1, null)
+                rhinoContext.evaluateString(scope, script.get(), "<control_script>", 1, null)
 
                 val outp = scope.get("outp") as NativeObject
 
@@ -95,12 +96,20 @@ class Controller(val context: android.content.Context, val comm: Communication) 
         runQueue.put("userinput")
     }
 
+    fun triggerRun() {
+        runQueue.put("manual")
+    }
+
+    fun updateSrc(s: String) {
+        script.set(s)
+    }
+
     fun stop() {
         runQueue.put("stop")
     }
 
     companion object {
-        val LOGTAG="Control"
+        const val LOGTAG = "Control"
         val DEFAULTSCRIPT = """
 
         outp = {};

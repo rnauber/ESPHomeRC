@@ -51,12 +51,27 @@
         android:name="dev.nauber.esphomerc.LogFragment"
         android:layout_width="0dp"
         android:layout_height="150dp"
-        android:alpha="0.5"
+        android:alpha="0.8"
         android:animationCache="true"
-        android:background="?attr/colorPrimary"
+        android:background="#1A018786"
         android:translationZ="1dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragmentController"
+        android:name="dev.nauber.esphomerc.ControllerOutputFragment"
+        android:layout_width="0dp"
+        android:layout_height="150dp"
+        android:alpha="0.8"
+        android:animationCache="true"
+        android:background="@color/black_overlay"
+        android:translationZ="1dp"
+        app:layout_constraintBottom_toBottomOf="@+id/imageView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
 </androidx.constraintlayout.widget.ConstraintLayout>

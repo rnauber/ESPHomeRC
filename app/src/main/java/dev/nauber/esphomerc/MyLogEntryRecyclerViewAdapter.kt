@@ -1,5 +1,6 @@
 package dev.nauber.esphomerc
 
+import android.graphics.drawable.Drawable
 import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
@@ -20,7 +21,14 @@ class MyLogEntryRecyclerViewAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = values.value?.get(position)
         if (item != null) {
-            holder.idView.text = item.source
+            val source = item.source
+            holder.idView.text=""
+            when (source){
+                Controller.LOGTAG -> holder.idView.setBackgroundResource(R.drawable.ic_logo2)
+                Communication.LOGTAGESPHOME-> holder.idView.setBackgroundResource(R.drawable.ic_esphome_logo)
+                Communication.LOGTAG -> holder.idView.setBackgroundResource(R.drawable.ic_baseline_wifi_24)
+                else-> holder.idView.text = source
+            }
             holder.contentView.text = item.content
         }
 
@@ -29,7 +37,7 @@ class MyLogEntryRecyclerViewAdapter(
     override fun getItemCount(): Int = values.value?.size ?: 0
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val idView: TextView = view.findViewById(R.id.item_number)
+        val idView: TextView = view.findViewById(R.id.symbol)
         val contentView: TextView = view.findViewById(R.id.content)
 
         override fun toString(): String {

@@ -110,6 +110,7 @@ class Communication(val url: String?, val password: String?) {
                     } catch (e: IOException) {
                         onLog?.invoke(LOGTAG, "Error (RX): ${e.message}")
                         e.printStackTrace()
+                        break
                     }
                     if (stop.get())
                         break

@@ -19,7 +19,6 @@ class MainActivity : AppCompatActivity() {
         val binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-
         // val navHostFragment =binding.navHostFragment as NavHostFragment
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
@@ -40,19 +39,15 @@ class MainActivity : AppCompatActivity() {
         sideNavView?.setupWithNavController(navController)
 
 
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
-        R.id.reconnect -> {
-            val viewModel: ControlCommViewModel by viewModels()
-            viewModel.reconnect(this)
-            true
-        }
-
-        else -> {
-            super.onOptionsItemSelected(item)
+        binding.toolbar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.reconnect -> {
+                    val viewModel: ControlCommViewModel by viewModels()
+                    viewModel.reconnect(this)
+                    true
+                }
+                else -> false
+            }
         }
     }
-
-
 }

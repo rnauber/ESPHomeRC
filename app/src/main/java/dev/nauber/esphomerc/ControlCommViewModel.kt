@@ -37,6 +37,7 @@ class ControlCommViewModel : ViewModel() {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val esphomeapiurl = sharedPreferences.getString("esphomeapiurl", "10.0.2.2")
         val password = sharedPreferences.getString("esphomeapipassword", null)
+        val controllerSrc = sharedPreferences.getString("controller_src", Controller.DEFAULTSCRIPT)
 
         comm?.stop()
         comm = Communication(esphomeapiurl, password)
@@ -70,6 +71,11 @@ class ControlCommViewModel : ViewModel() {
         }
 
         controller?.onOutput = { controllerOut.postValue(it) }
+        if (controllerSrc != null) {
+            controller?.updateSrc(controllerSrc)
+        }
+        controller?.triggerRun()
+
 
     }
 
@@ -78,7 +84,7 @@ class ControlCommViewModel : ViewModel() {
     }
 
     fun updateControllerSrc(src: String) {
-        controller?.script = src
+        controller?.updateSrc(src)
     }
 
     companion object {
