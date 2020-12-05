@@ -12,16 +12,16 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:adjustViewBounds="true"
-        android:src="@drawable/ic_logo2"
+        android:contentDescription="@string/live_camera_view"
         android:keepScreenOn="true"
         android:scaleType="fitCenter"
+        android:src="@drawable/ic_logo2"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0"
-        android:contentDescription="@string/live_camera_view" />
+        app:layout_constraintVertical_bias="0.0" />
 
     <io.github.controlwear.virtual.joystick.android.JoystickView
         android:id="@+id/joystickView"
@@ -29,9 +29,9 @@
         android:layout_height="300dp"
         android:layout_alignParentBottom="true"
         android:layout_margin="32dp"
+        app:JV_autoReCenterButton="true"
         app:JV_backgroundColor="@color/black_overlay"
         app:JV_fixedCenter="false"
-        app:JV_autoReCenterButton="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -50,7 +50,7 @@
         android:id="@+id/fragmentlog"
         android:name="dev.nauber.esphomerc.LogFragment"
         android:layout_width="0dp"
-        android:layout_height="150dp"
+        android:layout_height="100dp"
         android:alpha="0.8"
         android:animationCache="true"
         android:background="#1A018786"
@@ -58,6 +58,20 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragment_aux_controls"
+        android:name="dev.nauber.esphomerc.AuxControlsFragment"
+        android:layout_width="245dp"
+        android:layout_height="wrap_content"
+        android:alpha="0.8"
+        android:animationCache="true"
+        android:background="@color/black_overlay"
+        android:translationZ="1dp"
+        app:layout_constraintBottom_toBottomOf="@+id/fragmentlog"
+        app:layout_constraintEnd_toEndOf="@+id/fragmentlog"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/imageView" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragmentController"
@@ -74,4 +88,5 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="1.0" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

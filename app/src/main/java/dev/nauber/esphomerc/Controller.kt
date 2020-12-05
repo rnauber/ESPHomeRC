@@ -19,6 +19,7 @@ class Controller(val context: android.content.Context, val comm: Communication) 
     private val t = Thread(this)
 
     init {
+        inpUser.putAll(mapOf("x" to 0f, "y" to 0f, "aux0" to 0f))
         t.start()
     }
 

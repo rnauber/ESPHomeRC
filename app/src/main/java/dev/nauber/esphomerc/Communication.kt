@@ -26,6 +26,7 @@ class Communication(val url: String?, val password: String?) {
     private val entitiesCamera = ConcurrentHashMap<Int, Api.ListEntitiesCameraResponse>()
 
     private val threadTx = thread(name = "CommunicationTxThread", start = false) {
+        while (true){
         try {
             val (host, port) = parseUrl(url)
             onLog?.invoke(LOGTAG, "trying to connect to $host:$port")
@@ -48,7 +49,6 @@ class Communication(val url: String?, val password: String?) {
 
             sendMessage(Api.DeviceInfoRequest.newBuilder().build(), ous)
             listEntities()
-
 
             thread(name = "CommunicationRxThread") {
                 val camData: MutableMap<Int, ByteString?> = mutableMapOf()
@@ -115,10 +115,8 @@ class Communication(val url: String?, val password: String?) {
                     if (stop.get())
                         break
                 }
-
                 onLog?.invoke(LOGTAG, "Communication (RX) stopped!")
             }
-
 
             while (true) {
                 val txmsg = msgQueue.take()
@@ -134,6 +132,12 @@ class Communication(val url: String?, val password: String?) {
             onLog?.invoke(LOGTAG, "Error (TX): ${e.message}")
             e.printStackTrace()
         }
+
+
+        if (stop.get())
+            break
+        }
+
     }
 
     fun setImageStream(stream: Boolean, single: Boolean) {
