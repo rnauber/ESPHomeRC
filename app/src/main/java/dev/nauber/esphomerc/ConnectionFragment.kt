@@ -18,7 +18,8 @@ class ConnectionFragment : Fragment() {
         val viewModel: ControlCommViewModel by viewModels({requireActivity()})
         val binding = FragmentConnectionBinding.inflate(inflater, container, false)
         binding.floatingActionButton.setOnClickListener{
-            viewModel.reconnect(requireContext())
+            //viewModel.reconnect(requireContext())
+            viewModel.requestPing()
         }
         val view = binding.root
         return view

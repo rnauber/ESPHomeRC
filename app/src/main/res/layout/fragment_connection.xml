@@ -20,5 +20,5 @@
         android:layout_margin="16dp"
         android:clickable="true"
         android:contentDescription="@string/connect_action"
-        android:src="@android:drawable/stat_sys_upload" />
+        android:src="@android:drawable/ic_lock_idle_alarm" />
 </FrameLayout>

@@ -83,6 +83,11 @@ class ControlCommViewModel : ViewModel() {
         controller?.updateInput(map)
     }
 
+    fun requestPing() {
+        comm?.requestPing()
+    }
+
+
     fun updateControllerSrc(src: String) {
         controller?.updateSrc(src)
     }
