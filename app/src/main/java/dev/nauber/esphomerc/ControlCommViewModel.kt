@@ -85,8 +85,10 @@ class ControlCommViewModel : ViewModel() {
 
     fun requestPing() {
         comm?.requestPing()
+        comm?.setHBridge(-1, System.currentTimeMillis().toFloat(), false)
     }
 
+    
 
     fun updateControllerSrc(src: String) {
         controller?.updateSrc(src)

@@ -22,12 +22,12 @@ class MyLogEntryRecyclerViewAdapter(
         val item = values.value?.get(position)
         if (item != null) {
             val source = item.source
-            holder.idView.text=""
-            when (source){
+            holder.idView.text = ""
+            when (source) {
                 Controller.LOGTAG -> holder.idView.setBackgroundResource(R.drawable.ic_logo2)
-                Communication.LOGTAGESPHOME-> holder.idView.setBackgroundResource(R.drawable.ic_esphome_logo)
+                Communication.LOGTAGESPHOME -> holder.idView.setBackgroundResource(R.drawable.ic_esphome_logo)
                 Communication.LOGTAG -> holder.idView.setBackgroundResource(R.drawable.ic_baseline_wifi_24)
-                else-> holder.idView.text = source
+                else -> holder.idView.text = source
             }
             holder.contentView.text = item.content
         }

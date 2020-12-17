@@ -13,7 +13,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 class CockpitFragment : Fragment() {
-    val UPDATEINTERVALMS = 400
+    private val UPDATEINTERVALMS = 100
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,

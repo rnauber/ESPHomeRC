@@ -18,7 +18,6 @@ class ControllerFragment : Fragment() {
         val binding = FragmentControllerBinding.inflate(inflater, container, false)
         val viewModel: ControlCommViewModel by viewModels({ requireActivity() })
 
-
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val controllerSrc = sharedPreferences.getString("controller_src", Controller.DEFAULTSCRIPT)
 
