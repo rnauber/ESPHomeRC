@@ -27,6 +27,12 @@ class ControlCommViewModel : ViewModel() {
         return log
     }
 
+    private val auxControls = MutableLiveData<List<String>>(listOf())
+
+    fun getAuxControls(): LiveData<List<String>> {
+        return auxControls
+    }
+
     private val controllerOut = MutableLiveData<String>()
     fun getControllerOut(): LiveData<String> {
         return controllerOut
@@ -68,6 +74,7 @@ class ControlCommViewModel : ViewModel() {
         controller?.onLog = { logsrc, logmsg ->
             val newitem = LogItem(logsrc, logmsg, "")
             log.postValue(log.value?.plus(newitem) ?: listOf(newitem))
+            Log.i("onlog", logmsg)
         }
 
         controller?.onOutput = { controllerOut.postValue(it) }
@@ -75,6 +82,9 @@ class ControlCommViewModel : ViewModel() {
             controller?.updateSrc(controllerSrc)
         }
         controller?.triggerRun()
+
+        val auxControlsList = listOf("v_max", "Light")
+        auxControls.postValue(auxControlsList)
 
 
     }
@@ -88,7 +98,6 @@ class ControlCommViewModel : ViewModel() {
         comm?.setHBridge(-1, System.currentTimeMillis().toFloat(), false)
     }
 
-    
 
     fun updateControllerSrc(src: String) {
         controller?.updateSrc(src)

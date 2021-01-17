@@ -61,17 +61,15 @@
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment_aux_controls"
-        android:name="dev.nauber.esphomerc.AuxControlsFragment"
-        android:layout_width="245dp"
-        android:layout_height="wrap_content"
+        android:name="dev.nauber.esphomerc.AuxControlFragment"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
         android:alpha="0.8"
         android:animationCache="true"
         android:background="@color/black_overlay"
         android:translationZ="1dp"
-        app:layout_constraintBottom_toBottomOf="@+id/fragmentlog"
-        app:layout_constraintEnd_toEndOf="@+id/fragmentlog"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/imageView" />
+        app:layout_constraintStart_toStartOf="@id/fragmentlog"
+        app:layout_constraintTop_toBottomOf="@id/fragmentlog" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragmentController"
