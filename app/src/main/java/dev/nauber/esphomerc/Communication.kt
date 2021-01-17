@@ -26,11 +26,12 @@ class Communication(val url: String?, val password: String?) {
     private val entitiesCamera = ConcurrentHashMap<Int, Api.ListEntitiesCameraResponse>()
 
     private val threadTx = thread(name = "CommunicationTxThread", start = false) {
+        var client: Socket? = null
         while (true) {
             try {
                 val (host, port) = parseUrl(url)
                 onLog?.invoke(LOGTAG, "trying to connect to $host:$port")
-                val client = Socket(host, port)
+                client = Socket(host, port)
 
                 val ins = client.getInputStream()
                 val ous = client.getOutputStream()
@@ -116,7 +117,7 @@ class Communication(val url: String?, val password: String?) {
 
                                 }
                             }
-                        } catch (e: IOException) {
+                        } catch (e: Throwable) {
                             onLog?.invoke(LOGTAG, "Error (RX): ${e.message}")
                             e.printStackTrace()
                             break
@@ -140,9 +141,14 @@ class Communication(val url: String?, val password: String?) {
 
                 onLog?.invoke(LOGTAG, "Communication (TX) stopped!")
                 client.close()
-            } catch (e: IOException) {
+            } catch (e: Throwable) {
                 onLog?.invoke(LOGTAG, "Error (TX): ${e.message}")
                 e.printStackTrace()
+                try {
+                    client?.close()
+                } catch (e: Throwable) {
+                }
+
             }
 
             if (stop.get())
