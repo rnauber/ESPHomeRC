@@ -65,7 +65,7 @@ dependencies {
     protobuf 'com.google.protobuf:protobuf-java:3.10.0'
     implementation("com.google.protobuf:protobuf-java:3.10.0")
 
-    implementation 'com.faendir.rhino:rhino-android:1.5.2'
+    implementation 'com.faendir.rhino:rhino-android:1.6.0'
 }
 
 protobuf {

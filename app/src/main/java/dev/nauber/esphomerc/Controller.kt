@@ -4,6 +4,7 @@ package dev.nauber.esphomerc
 import com.faendir.rhino_android.RhinoAndroidHelper
 import org.mozilla.javascript.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicReference
 
@@ -11,6 +12,7 @@ import java.util.concurrent.atomic.AtomicReference
 class Controller(val context: android.content.Context, val comm: Communication) : Runnable {
     private var script = AtomicReference<String>()
     private var inpUser = ConcurrentHashMap<String, Float>()
+    private var inpUserAuxControls = ConcurrentLinkedQueue<String>()
     private val runQueue = LinkedBlockingQueue<String>()
 
     var onOutput: ((String) -> Unit)? = null
@@ -19,7 +21,7 @@ class Controller(val context: android.content.Context, val comm: Communication) 
     private val t = Thread(this)
 
     init {
-        inpUser.putAll(mapOf("x" to 0f, "y" to 0f, "aux0" to 0f))
+        resetInput()
         t.start()
     }
 
@@ -66,21 +68,29 @@ class Controller(val context: android.content.Context, val comm: Communication) 
                         val index = Context.jsToJava(hb["index"], ScriptRuntime.IntegerClass) as Int
                         val strength = try {
                             Context.jsToJava(hb["strength"], ScriptRuntime.FloatClass) as Float
-                        } catch (e: EvaluatorException) {
+                        } catch (e: Exception) {
                             0.0f
                         }
                         val brake = try {
                             Context.jsToJava(hb["brake"], ScriptRuntime.BooleanClass) as Boolean
-                        } catch (e: EvaluatorException) {
+                        } catch (e: Exception) {
                             false
                         }
                         output += "setHBridge(index = $index, strength = $strength, brake = $brake) \n"
                         comm.setHBridge(index = index, strength = strength, brake = brake)
 
-                    } catch (t: EvaluatorException) {
+                    } catch (t: Exception) {
                     }
                 }
 
+                val user = outp["user"] as NativeObject
+                if (user != null) {
+                    val auxLabels = user["aux_labels"] as? Collection<String>
+                    if (auxLabels != null) {
+                        inpUserAuxControls.clear()
+                        inpUserAuxControls.addAll(auxLabels)
+                    }
+                }
             } catch (t: Throwable) {
                 t.printStackTrace()
                 output += "${t.message} \n ${t.stackTrace[0]} \n"
@@ -92,9 +102,19 @@ class Controller(val context: android.content.Context, val comm: Communication) 
         Context.exit()
     }
 
+    private fun resetInput() {
+        inpUser.clear()
+        inpUser.putAll(mapOf("x" to 0f, "y" to 0f))
+        inpUserAuxControls.forEachIndexed { i, s -> inpUser.put("aux$i", 0f) }
+    }
+
     fun updateInput(map: Map<String, Float>) {
         inpUser.putAll(map)
         runQueue.put("userinput")
+    }
+
+    fun getAuxControlLabels(): List<String> {
+        return inpUserAuxControls.toList()
     }
 
     fun triggerRun() {
@@ -103,6 +123,7 @@ class Controller(val context: android.content.Context, val comm: Communication) 
 
     fun updateSrc(s: String) {
         script.set(s)
+        resetInput()
     }
 
     fun stop() {
@@ -112,22 +133,36 @@ class Controller(val context: android.content.Context, val comm: Communication) 
     companion object {
         const val LOGTAG = "Control"
         val DEFAULTSCRIPT = """
-
-        outp = {};
-        outp.display = "Hi from the controller, I am running because " + inp["reason"] ;
-                
-        if (typeof i == "undefined") {
-            i = 0;
-        }
-        i++;
-        outp.display += " i=" + i +"\n";
-        
-        outp.hbridge = [
-        //                {"index":0, "strength": inp.user.x * 0.6, "brake":false}, 
-        //                {"index":1, "strength": inp.user.y * 0.6, "brake":false},
-        //                {"index":2, "strength": inp.user.y * 0.4, "brake":false},
-                       ]
-        
+            outp = {};
+            outp.display = "Hi from the controller, I am running because " + inp["reason"] ;
+                    
+            if (typeof i == "undefined") {
+                i = 0;
+            }
+            
+            i++;
+            outp.display += " i=" + i +"\n";
+            //outp.log="log " + i + "  "+inp.user.x + " " +inp.user.y; 
+            
+            var fwd = inp.user.y * 2.0 ;
+            fwd = Math.max(Math.min(1.0, fwd), -1.0); //limit to +-1.0
+            fwd *= inp.user.aux0;
+            
+            var lr= inp.user.x;
+            if (Math.abs(lr) > 0.3)
+              lr = lr*1.1;
+            else
+              lr = 0.0;
+            
+            outp.hbridge = [
+                           {"index":0, "strength": lr , "brake":false}, 
+                           {"index":1, "strength": fwd , "brake":false},
+                           {"index":2, "strength":  inp.user.aux1, "brake":false},
+            ];
+            
+            outp.user={};
+            outp.user.aux_labels=["vmax", "light"]; // aux0 = vmax, aux1=light
+            
     """.trimIndent()
 
     }

@@ -77,15 +77,18 @@ class ControlCommViewModel : ViewModel() {
             Log.i("onlog", logmsg)
         }
 
-        controller?.onOutput = { controllerOut.postValue(it) }
+        controller?.onOutput = {
+            controllerOut.postValue(it)
+
+            val auxControlsLast = auxControls.value
+            val auxControlsNew = controller?.getAuxControlLabels()
+            if (auxControlsLast != auxControlsNew)
+                auxControls.postValue(auxControlsNew)
+        }
         if (controllerSrc != null) {
             controller?.updateSrc(controllerSrc)
         }
         controller?.triggerRun()
-
-        val auxControlsList = listOf("v_max", "Light")
-        auxControls.postValue(auxControlsList)
-
 
     }
 
