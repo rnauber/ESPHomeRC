@@ -13,9 +13,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 
-/**
- * A fragment representing a list of Items.
- */
 class LogFragment : Fragment() {
 
     private var columnCount = 1

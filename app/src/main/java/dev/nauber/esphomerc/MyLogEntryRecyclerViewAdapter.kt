@@ -1,6 +1,5 @@
 package dev.nauber.esphomerc
 
-import android.graphics.drawable.Drawable
 import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View

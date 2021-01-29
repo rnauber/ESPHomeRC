@@ -6,6 +6,7 @@ import org.mozilla.javascript.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 
@@ -27,12 +28,16 @@ class Controller(val context: android.content.Context, val comm: Communication) 
 
     override fun run() {
         val rhinoAndroidHelper = RhinoAndroidHelper(context)
-        val rhinoContext = rhinoAndroidHelper.enterContext();
-        rhinoContext.optimizationLevel = 9;
-        val scope = rhinoContext.initSafeStandardObjects();
+        val rhinoContext = rhinoAndroidHelper.enterContext()
+        rhinoContext.optimizationLevel = 9
+        val scope = rhinoContext.initSafeStandardObjects()
+        var timeout = INFINITY;
 
         while (true) {
-            val reason = runQueue.take()
+            var reason = runQueue.poll(timeout, TimeUnit.MILLISECONDS)
+            if (reason == null)
+                reason = "time"
+
             if (reason == "stop")
                 break
 
@@ -45,6 +50,7 @@ class Controller(val context: android.content.Context, val comm: Communication) 
                 inpUser.forEach(10) { k, v -> inpUserObject.defineProperty(k, v, 0) }
 
                 inpObject.defineProperty("reason", reason, 0)
+                inpObject.defineProperty("timestamp_ms", System.currentTimeMillis(), 0)
                 inpObject.defineProperty("user", inpUserObject, 0)
 
                 ScriptableObject.putProperty(scope, "inp", inpObject)
@@ -84,13 +90,22 @@ class Controller(val context: android.content.Context, val comm: Communication) 
                 }
 
                 val user = outp["user"] as NativeObject
-                if (user != null) {
+
+                try {
                     val auxLabels = user["aux_labels"] as? Collection<String>
                     if (auxLabels != null) {
                         inpUserAuxControls.clear()
                         inpUserAuxControls.addAll(auxLabels)
                     }
+                } catch (t: TypeCastException) {
                 }
+
+                try {
+                    val intervalms = user["interval_ms"] as? Int
+                    timeout = intervalms?.toLong() ?: INFINITY
+                } catch (t: TypeCastException) {
+                }
+
             } catch (t: Throwable) {
                 t.printStackTrace()
                 output += "${t.message} \n ${t.stackTrace[0]} \n"
@@ -131,10 +146,12 @@ class Controller(val context: android.content.Context, val comm: Communication) 
     }
 
     companion object {
+        const val INFINITY = 100_000_000L
         const val LOGTAG = "Control"
         val DEFAULTSCRIPT = """
             outp = {};
-            outp.display = "Hi from the controller, I am running because " + inp["reason"] ;
+            outp.display = "Hi from the controller, I am running because " + 
+                            inp["reason"] + " at " + inp["timestamp_ms"] + " ms";
                     
             if (typeof i == "undefined") {
                 i = 0;
@@ -142,7 +159,7 @@ class Controller(val context: android.content.Context, val comm: Communication) 
             
             i++;
             outp.display += " i=" + i +"\n";
-            //outp.log="log " + i + "  "+inp.user.x + " " +inp.user.y; 
+            //outp.log="log " + i + "  " + inp.user.x + " " + inp.user.y; 
             
             var fwd = inp.user.y * 2.0 ;
             fwd = Math.max(Math.min(1.0, fwd), -1.0); //limit to +-1.0
@@ -150,7 +167,7 @@ class Controller(val context: android.content.Context, val comm: Communication) 
             
             var lr= inp.user.x;
             if (Math.abs(lr) > 0.3)
-              lr = lr*1.1;
+              lr = lr * 1.1;
             else
               lr = 0.0;
             
@@ -160,8 +177,9 @@ class Controller(val context: android.content.Context, val comm: Communication) 
                            {"index":2, "strength":  inp.user.aux1, "brake":false},
             ];
             
-            outp.user={};
+            outp.user = {};
             outp.user.aux_labels=["vmax", "light"]; // aux0 = vmax, aux1=light
+            outp.user.interval_ms = 10000 ;// regular interval to call this script, 0 means as fast as possible... 
             
     """.trimIndent()
 
