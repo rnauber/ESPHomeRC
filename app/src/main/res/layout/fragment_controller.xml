@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/frameLayout"
     android:layout_width="match_parent"
@@ -7,19 +8,34 @@
     android:orientation="vertical"
     tools:context=".ControllerFragment">
 
-    <com.brackeys.ui.editorkit.widget.TextProcessor
-        android:id="@+id/code"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:gravity="top|start" />
     <!-- android:inputType="textMultiLine|textNoSuggestions|textImeMultiLine"-->
 
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1">
+
+        <com.brackeys.ui.editorkit.widget.TextProcessor
+            android:id="@+id/code"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="top|start" />
+
+        <com.brackeys.ui.editorkit.widget.TextScroller
+            android:id="@+id/scroller"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end" />
+    </FrameLayout>
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment"
         android:name="dev.nauber.esphomerc.ControllerOutputFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="4" />
+        android:layout_weight="4">
+
+    </androidx.fragment.app.FragmentContainerView>
+
 </LinearLayout>

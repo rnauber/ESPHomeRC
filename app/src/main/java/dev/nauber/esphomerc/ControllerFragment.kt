@@ -32,6 +32,7 @@ class ControllerFragment : Fragment() {
         editor.undoStack = UndoStack()
         editor.redoStack = UndoStack()
 
+        binding.scroller.attachTo(editor)
 
         binding.code.doAfterTextChanged { ed ->
             val src = ed.toString()
