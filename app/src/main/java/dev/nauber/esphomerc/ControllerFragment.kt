@@ -8,7 +8,10 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.preference.PreferenceManager
+import com.brackeys.ui.editorkit.utils.UndoStack
+import com.brackeys.ui.language.javascript.JavaScriptLanguage
 import dev.nauber.esphomerc.databinding.FragmentControllerBinding
+
 class ControllerFragment : Fragment() {
 
     override fun onCreateView(
@@ -21,8 +24,14 @@ class ControllerFragment : Fragment() {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val controllerSrc = sharedPreferences.getString("controller_src", Controller.DEFAULTSCRIPT)
 
-        binding.code.setText(controllerSrc)
-        //TODO support multiple code slots
+        val editor = binding.code
+        editor.language = JavaScriptLanguage()
+
+        editor.setTextContent(controllerSrc ?: "")
+        //TODO keep the undo stack
+        editor.undoStack = UndoStack()
+        editor.redoStack = UndoStack()
+
 
         binding.code.doAfterTextChanged { ed ->
             val src = ed.toString()

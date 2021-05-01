@@ -7,12 +7,14 @@
     android:orientation="vertical"
     tools:context=".ControllerFragment">
 
-    <com.sungbin.texteditor.library.SimpleCodeEditor
+    <com.brackeys.ui.editorkit.widget.TextProcessor
         android:id="@+id/code"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        android:inputType="textMultiLine|textNoSuggestions|textImeMultiLine" />
+        android:gravity="top|start" />
+    <!-- android:inputType="textMultiLine|textNoSuggestions|textImeMultiLine"-->
+
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment"
