@@ -21,18 +21,12 @@ class CockpitFragment : Fragment() {
     ): View? {
         val binding = FragmentCockpitBinding.inflate(inflater, container, false)
 
-
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val rot = sharedPreferences.getString("cam_rotation", "0")
-
         val imageView = binding.imageView
-        imageView.rotation = rot?.toFloat() ?: 0f
-
         val viewModel: ControlCommViewModel by viewModels({ requireActivity() })
-        viewModel.getImage().observe(viewLifecycleOwner, {
+        viewModel.getCameraImage().observe(viewLifecycleOwner, {
             imageView.setImageDrawable(it.toDrawable(resources))
         })
-
+        imageView.rotation = viewModel.camRotation
 
         val joystick = binding.joystickView
         joystick.setOnMoveListener({ angle, strength ->

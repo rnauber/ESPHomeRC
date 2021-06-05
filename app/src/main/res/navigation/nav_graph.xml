@@ -8,15 +8,15 @@
     <fragment
         android:id="@+id/cockpitFragment"
         android:name="dev.nauber.esphomerc.CockpitFragment"
-        android:label="@string/title_cockpit" >
+        android:label="@string/title_cockpit">
         <action
             android:id="@+id/action_cockpit_to_settingsFragment"
             app:destination="@id/settingsFragment" />
     </fragment>
     <fragment
         android:id="@+id/settingsFragment"
-        android:name="dev.nauber.esphomerc.SettingsFragment"
-        android:label="@string/title_settings" >
+        android:name="dev.nauber.esphomerc.VehicleSettingsFragment"
+        android:label="@string/title_settings">
         <action
             android:id="@+id/action_settingsFragment_to_cockpit"
             app:destination="@id/cockpitFragment" />

@@ -2,6 +2,9 @@
 
     <style name="Widget.Theme.ESPHomeRCCar.ActionBar.Fullscreen" parent="Widget.AppCompat.ActionBar">
         <item name="android:background">@color/black_overlay</item>
+        <item name="materialDrawerStyle">@style/Widget.MaterialDrawerStyle</item>
+        <item name="materialDrawerHeaderStyle">@style/Widget.MaterialDrawerHeaderStyle</item>
+
     </style>
 
     <style name="Widget.Theme.ESPHomeRCCar.ButtonBar.Fullscreen" parent="">

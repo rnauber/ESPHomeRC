@@ -36,7 +36,6 @@ class ControllerFragment : Fragment() {
 
         binding.code.doAfterTextChanged { ed ->
             val src = ed.toString()
-            sharedPreferences.edit().putString("controller_src", src).apply()
             viewModel.updateControllerSrc(src)
         }
         val view = binding.root

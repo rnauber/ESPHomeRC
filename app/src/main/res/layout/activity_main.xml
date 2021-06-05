@@ -20,8 +20,7 @@
             android:layout_height="wrap_content"
             android:background="@color/design_default_color_primary"
             android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
-            app:menu="@menu/top_app_bar"
-            />
+            app:menu="@menu/top_app_bar" />
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/nav_host_fragment"
@@ -32,13 +31,11 @@
             app:navGraph="@navigation/nav_graph" />
     </LinearLayout>
 
-    <!-- Container for contents of drawer - use NavigationView to make configuration easier -->
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/nav_view"
+    <com.mikepenz.materialdrawer.widget.MaterialDrawerSliderView
+        android:id="@+id/slider"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:fitsSystemWindows="true"
-        app:menu="@menu/nav_drawer_menu"/>
+        android:fitsSystemWindows="true" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

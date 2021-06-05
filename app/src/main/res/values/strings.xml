@@ -5,12 +5,16 @@
     <string name="esphomeapiurl_title">URL of the ESPHome API of the device</string>
     <string name="esphomeapipassword_title">ESPHome API password</string>
     <string name="title_settings">Settings</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="connect_action">Connect</string>
     <string name="title_cockpit">Cockpit</string>
     <string name="title_connection">Connection</string>
     <string name="title_controller">Controller</string>
     <string name="reconnect">Reconnect</string>
+    <string name="add_vehicle">Add Vehicle</string>
+    <string name="remove_vehicle">Remove Current Vehicle</string>
     <string name="live_camera_view">Live Camera View</string>
+    <!-- Preference Titles -->
+    <string name="vehicle_header">Vehicle</string>
+    <string name="vehicle_name_title">Name of the Vehicle</string>
+    <string name="new_vehicle">New Vehicle</string>
 </resources>
