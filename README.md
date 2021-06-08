@@ -9,7 +9,7 @@ Features:
 * fully scriptable control via javascript
 
 
-## [RC car retrofit with an ESP32-CAM](https://github.com/rnauber/rnauber/ESPHomeRC-RetrofitCar) 
+## [RC car retrofit with an ESP32-CAM](https://github.com/rnauber/ESPHomeRC-RetrofitCar) 
 
 |   |   |   |
 |---|---|---|
