@@ -40,6 +40,7 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
     }
 
     fun addVehicle(vid: Long, name: String) {
+        Log.v("", "Create vehicle $name vid=$vid")
         setVehicleSetting(vid, "name", name)
         liveVehicleIds.postValue(vehicleIds)
     }
@@ -55,7 +56,7 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
 
     val vehicleIds: List<Long>
         get() =
-            sharedPreferences.all.map { parseSettingKey(it.key)?.first }.filterNotNull().distinct()
+            sharedPreferences.all.map { parseSettingKey(it.key)?.first }.filterNotNull().filter { it > 0 }.distinct()
 
     val liveVehicleIds = MutableLiveData(vehicleIds)
 
@@ -205,7 +206,7 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
 
 
     fun updateControllerSrc(src: String) {
-        sharedPreferences.edit().putString("controller_src", src).apply()
+        setVehicleSetting(currentVehicleId,"controller_src", src)
         controller?.updateSrc(src)
     }
 

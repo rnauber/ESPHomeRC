@@ -41,20 +41,25 @@ class MainActivity : AppCompatActivity() {
             attachToSliderView(binding.slider)
             onAccountHeaderListener = { view, profile, current ->
                 if (profile is IDrawerItem<*>) {                    //add vehicle
-                    if (profile.identifier == ID_ADD_VEHICLE.toLong()) {
-                        val newid = viewModel.newVehicleId()
-                        viewModel.addVehicle(newid, context.getString(R.string.new_vehicle))
-                        viewModel.currentVehicleId = newid
-                        true
-                    } else if (profile.identifier == ID_REMOVE_VEHICLE.toLong()) {//remove vehicle
-                        if (viewModel.vehicleIds.size > 1) {
-                            viewModel.removeVehicle(viewModel.currentVehicleId)
-                            viewModel.currentVehicleId = viewModel.vehicleIds[0]
+                    when (profile.identifier) {
+                        ID_ADD_VEHICLE.toLong() -> {
+                            val newid = viewModel.newVehicleId()
+
+                            viewModel.addVehicle(newid, context.getString(R.string.new_vehicle))
+                            viewModel.currentVehicleId = newid
+                            true
                         }
-                        true
-                    } else { // select profile
-                        viewModel.currentVehicleId = profile.identifier
-                        false
+                        ID_REMOVE_VEHICLE.toLong() -> {//remove vehicle
+                            if (viewModel.vehicleIds.size > 1) {
+                                viewModel.removeVehicle(viewModel.currentVehicleId)
+                                viewModel.currentVehicleId = viewModel.vehicleIds[0]
+                            }
+                            true
+                        }
+                        else -> { // select profile
+                            viewModel.currentVehicleId = profile.identifier
+                            false
+                        }
                     }
                 } else
                 //false if you have not consumed the event and it should close the drawer
@@ -135,7 +140,7 @@ class MainActivity : AppCompatActivity() {
 
 
     companion object {
-        private const val ID_ADD_VEHICLE = 100000
-        private const val ID_REMOVE_VEHICLE = 100001
+        private const val ID_ADD_VEHICLE = -10  // -1 is reserved
+        private const val ID_REMOVE_VEHICLE = -11
     }
 }
