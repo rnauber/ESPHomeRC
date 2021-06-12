@@ -17,4 +17,5 @@
     <string name="vehicle_header">Vehicle</string>
     <string name="vehicle_name_title">Name of the Vehicle</string>
     <string name="new_vehicle">New Vehicle</string>
+    <string name="unnamed_vehicle">Unnamed</string>
 </resources>

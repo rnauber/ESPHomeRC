@@ -29,6 +29,7 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
         set(v) {
             if (currentVehicleId_ != v) {
                 currentVehicleId_ = v
+                reconnect()
                 liveCurrentVehicleId.postValue(v)
             }
         }
@@ -56,7 +57,8 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
 
     val vehicleIds: List<Long>
         get() =
-            sharedPreferences.all.map { parseSettingKey(it.key)?.first }.filterNotNull().filter { it > 0 }.distinct()
+            sharedPreferences.all.map { parseSettingKey(it.key)?.first }.filterNotNull()
+                .filter { it > 0 }.distinct()
 
     val liveVehicleIds = MutableLiveData(vehicleIds)
 
@@ -141,8 +143,12 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
     val esphomeapipassword: String?
         get() = getVehicleSetting(currentVehicleId, "esphomeapipassword")
 
-    val controller_src: String
+    var controller_src: String
         get() = getVehicleSetting(currentVehicleId, "controller_src") ?: Controller.DEFAULTSCRIPT
+        set(src) {
+            setVehicleSetting(currentVehicleId, "controller_src", src)
+            controller?.updateSrc(src)
+        }
 
     val camRotation: Float
         get() = getVehicleSetting(currentVehicleId, "cam_rotation")?.toFloat() ?: 0f
@@ -202,12 +208,6 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
     fun requestPing() {
         comm?.requestPing()
         comm?.setHBridge(-1, System.currentTimeMillis().toFloat(), false)
-    }
-
-
-    fun updateControllerSrc(src: String) {
-        setVehicleSetting(currentVehicleId,"controller_src", src)
-        controller?.updateSrc(src)
     }
 
 

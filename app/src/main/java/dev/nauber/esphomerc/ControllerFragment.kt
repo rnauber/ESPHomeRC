@@ -36,7 +36,7 @@ class ControllerFragment : Fragment() {
 
         binding.code.doAfterTextChanged { ed ->
             val src = ed.toString()
-            viewModel.updateControllerSrc(src)
+            viewModel.controller_src = src
         }
         val view = binding.root
         return view

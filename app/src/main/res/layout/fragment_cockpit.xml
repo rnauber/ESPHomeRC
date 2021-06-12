@@ -31,6 +31,7 @@
         android:layout_margin="32dp"
         app:JV_autoReCenterButton="true"
         app:JV_backgroundColor="@color/black_overlay"
+        app:JV_buttonColor="@color/teal_700"
         app:JV_fixedCenter="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
