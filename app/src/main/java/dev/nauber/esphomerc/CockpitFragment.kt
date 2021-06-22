@@ -23,10 +23,12 @@ class CockpitFragment : Fragment() {
 
         val imageView = binding.imageView
         val viewModel: ControlCommViewModel by viewModels({ requireActivity() })
-        viewModel.getCameraImage().observe(viewLifecycleOwner, {
+        viewModel.liveImage.observe(viewLifecycleOwner, {
             imageView.setImageDrawable(it.toDrawable(resources))
         })
-        imageView.rotation = viewModel.camRotation
+        viewModel.liveCamRotation.observe(viewLifecycleOwner,{
+            imageView.rotation = it
+        })
 
         val joystick = binding.joystickView
         joystick.setOnMoveListener({ angle, strength ->

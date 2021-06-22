@@ -10,7 +10,11 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 
-class Controller(val context: android.content.Context, val comm: Communication) : Runnable {
+class Controller(
+    val context: android.content.Context,
+    val comm: Communication,
+    private val vehicle_name: String = ""
+) : Runnable {
     private var script = AtomicReference<String>()
     private var inpUser = ConcurrentHashMap<String, Float>()
     private var inpUserAuxControls = ConcurrentLinkedQueue<String>()
@@ -44,6 +48,7 @@ class Controller(val context: android.content.Context, val comm: Communication) 
             var output = ""
             try {
                 //prepare input
+                fillMissingInputs()
 
                 val inpObject = NativeObject()
                 val inpUserObject = NativeObject()
@@ -52,6 +57,7 @@ class Controller(val context: android.content.Context, val comm: Communication) 
                 inpObject.defineProperty("reason", reason, 0)
                 inpObject.defineProperty("timestamp_ms", System.currentTimeMillis(), 0)
                 inpObject.defineProperty("user", inpUserObject, 0)
+                inpObject.defineProperty("vehicle_name", vehicle_name, 0)
 
                 ScriptableObject.putProperty(scope, "inp", inpObject)
 
@@ -101,8 +107,8 @@ class Controller(val context: android.content.Context, val comm: Communication) 
                 }
 
                 try {
-                    val intervalms = user["interval_ms"] as? Int
-                    timeout = intervalms?.toLong() ?: INFINITY
+                    val intervalMs = user["interval_ms"] as? Int
+                    timeout = intervalMs?.toLong() ?: INFINITY
                 } catch (t: TypeCastException) {
                 }
 
@@ -117,15 +123,28 @@ class Controller(val context: android.content.Context, val comm: Communication) 
         Context.exit()
     }
 
-    private fun resetInput() {
+    fun fillMissingInputs() {
+        val def = 0.0f
+        val keys = mutableListOf("x", "y")
+        inpUserAuxControls.forEachIndexed { i, s -> keys.add(0, "aux$i") }
+        keys.forEach {
+            if (!(inpUser.contains(it)))
+                inpUser.put(it, def)
+        }
+    }
+
+    fun resetInput() {
         inpUser.clear()
-        inpUser.putAll(mapOf("x" to 0f, "y" to 0f))
-        inpUserAuxControls.forEachIndexed { i, s -> inpUser.put("aux$i", 0f) }
+        fillMissingInputs()
     }
 
     fun updateInput(map: Map<String, Float>) {
         inpUser.putAll(map)
         runQueue.put("userinput")
+    }
+
+    fun getInput(key: String, defaultValue: Float = 0.0f): Float {
+        return inpUser.getOrDefault(key, defaultValue)
     }
 
     fun getAuxControlLabels(): List<String> {

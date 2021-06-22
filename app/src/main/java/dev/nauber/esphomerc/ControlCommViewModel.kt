@@ -16,25 +16,25 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
     private var comm: Communication? = null
 
     private var controller: Controller? = null
-    private val image = MutableLiveData<Bitmap>()
     private var imageStreamLastReq = 0L
 
     private val sharedPreferences =
         PreferenceManager.getDefaultSharedPreferences(getApplication<Application>().applicationContext)
 
-    private var currentVehicleId_: Long = 0L
+    val liveImage = MutableLiveData<Bitmap>()
 
-    var currentVehicleId: Long
-        get() = currentVehicleId_
-        set(v) {
-            if (currentVehicleId_ != v) {
-                currentVehicleId_ = v
+    var currentVehicleId
+        get() = sharedPreferences.getLong("CurrentVehicleId", 0)
+        set(value) {
+            if (currentVehicleId != value) {
+                sharedPreferences.edit().putLong("CurrentVehicleId", value).apply()
+                //trigger update of all affected properties
+                liveCamRotation.postValue(camRotation)
                 reconnect()
-                liveCurrentVehicleId.postValue(v)
             }
         }
 
-    val liveCurrentVehicleId = MutableLiveData(currentVehicleId)
+    val liveCurrentVehicleId = MutableLiveData(0L)
 
     fun newVehicleId(): Long {
         return (vehicleIds.maxOrNull() ?: 0) + 1
@@ -83,9 +83,6 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
         sharedPreferences.edit().putString(genSettingsKey(vid, key), value).apply()
     }
 
-    fun getCameraImage(): LiveData<Bitmap> {
-        return image
-    }
 
     private val log = MutableLiveData<List<LogItem>>(listOf())
 
@@ -153,13 +150,15 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
     val camRotation: Float
         get() = getVehicleSetting(currentVehicleId, "cam_rotation")?.toFloat() ?: 0f
 
+    val liveCamRotation = MutableLiveData(camRotation)
+
     fun reconnect() {
         comm?.stop()
         comm = Communication(esphomeapiurl, esphomeapipassword)
 
         comm?.onImage = { img ->
             val bm = BitmapFactory.decodeByteArray(img.toByteArray(), 0, img.size())
-            image.postValue(bm)
+            liveImage.postValue(bm)
 
             val now = System.currentTimeMillis()
             if (now - imageStreamLastReq > RENEW_STREAMING_MS) {
@@ -178,7 +177,7 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
         comm?.setImageStream(stream = false, single = true)// trigger image request
 
         controller?.stop()
-        controller = Controller(getApplication<Application>().applicationContext, comm!!)
+        controller = Controller(getApplication<Application>().applicationContext, comm!!, vehicleName)
 
         controller?.onLog = { logsrc, logmsg ->
             val newitem = LogItem(logsrc, logmsg, "")
@@ -198,11 +197,16 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
         controller?.updateSrc(controller_src)
 
         controller?.triggerRun()
+        controller?.resetInput()
 
     }
 
     fun updateInput(map: Map<String, Float>) {
         controller?.updateInput(map)
+    }
+
+    fun getInput(key: String): Float? {
+        return controller?.getInput(key)
     }
 
     fun requestPing() {

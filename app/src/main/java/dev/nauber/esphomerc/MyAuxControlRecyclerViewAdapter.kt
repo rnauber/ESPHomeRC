@@ -23,6 +23,7 @@ class MyAuxControlRecyclerViewAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val label = values.value?.get(position)
         holder.idView.text = label
+        holder.contentView.value = viewModel.getInput("aux$position") ?: 0f
 
         holder.contentView.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
             override fun onStartTrackingTouch(slider: Slider) {
