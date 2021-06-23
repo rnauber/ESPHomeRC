@@ -126,10 +126,10 @@ class Controller(
     fun fillMissingInputs() {
         val def = 0.0f
         val keys = mutableListOf("x", "y")
-        inpUserAuxControls.forEachIndexed { i, s -> keys.add(0, "aux$i") }
+        inpUserAuxControls.forEachIndexed { i, _ -> keys.add(0, "aux$i") }
         keys.forEach {
-            if (!(inpUser.contains(it)))
-                inpUser.put(it, def)
+            if (!(inpUser.keys.contains(it)))
+                inpUser[it] = def
         }
     }
 
@@ -184,7 +184,7 @@ class Controller(
             fwd = Math.max(Math.min(1.0, fwd), -1.0); //limit to +-1.0
             fwd *= inp.user.aux0;
             
-            var lr= inp.user.x;
+            var lr = inp.user.x;
             if (Math.abs(lr) > 0.3)
               lr = lr * 1.1;
             else

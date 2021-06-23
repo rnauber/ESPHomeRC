@@ -30,6 +30,7 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
                 sharedPreferences.edit().putLong("CurrentVehicleId", value).apply()
                 //trigger update of all affected properties
                 liveCamRotation.postValue(camRotation)
+                liveControllerSrc.postValue(controllerSrc)
                 reconnect()
             }
         }
@@ -140,12 +141,17 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
     val esphomeapipassword: String?
         get() = getVehicleSetting(currentVehicleId, "esphomeapipassword")
 
-    var controller_src: String
+    var controllerSrc: String
         get() = getVehicleSetting(currentVehicleId, "controller_src") ?: Controller.DEFAULTSCRIPT
         set(src) {
-            setVehicleSetting(currentVehicleId, "controller_src", src)
-            controller?.updateSrc(src)
+            if (src != controllerSrc) {
+                setVehicleSetting(currentVehicleId, "controller_src", src)
+                controller?.updateSrc(src)
+                //liveControllerSrc.postValue(src)
+            }
         }
+
+    val liveControllerSrc = MutableLiveData(controllerSrc)
 
     val camRotation: Float
         get() = getVehicleSetting(currentVehicleId, "cam_rotation")?.toFloat() ?: 0f
@@ -177,7 +183,8 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
         comm?.setImageStream(stream = false, single = true)// trigger image request
 
         controller?.stop()
-        controller = Controller(getApplication<Application>().applicationContext, comm!!, vehicleName)
+        controller =
+            Controller(getApplication<Application>().applicationContext, comm!!, vehicleName)
 
         controller?.onLog = { logsrc, logmsg ->
             val newitem = LogItem(logsrc, logmsg, "")
@@ -194,7 +201,7 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
                 auxControls.postValue(auxControlsNew!!)
         }
 
-        controller?.updateSrc(controller_src)
+        controller?.updateSrc(controllerSrc)
 
         controller?.triggerRun()
         controller?.resetInput()

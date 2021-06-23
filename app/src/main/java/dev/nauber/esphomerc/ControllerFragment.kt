@@ -7,7 +7,6 @@ import android.view.ViewGroup
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.preference.PreferenceManager
 import com.brackeys.ui.editorkit.utils.UndoStack
 import com.brackeys.ui.language.javascript.JavaScriptLanguage
 import dev.nauber.esphomerc.databinding.FragmentControllerBinding
@@ -21,22 +20,23 @@ class ControllerFragment : Fragment() {
         val binding = FragmentControllerBinding.inflate(inflater, container, false)
         val viewModel: ControlCommViewModel by viewModels({ requireActivity() })
 
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val controllerSrc = sharedPreferences.getString("controller_src", Controller.DEFAULTSCRIPT)
-
         val editor = binding.code
         editor.language = JavaScriptLanguage()
 
-        editor.setTextContent(controllerSrc ?: "")
+        editor.setTextContent(viewModel.controllerSrc)
+
+        viewModel.liveControllerSrc.observe(this, {
+            editor.setTextContent(it)
+        })
         //TODO keep the undo stack
         editor.undoStack = UndoStack()
         editor.redoStack = UndoStack()
 
         binding.scroller.attachTo(editor)
-
+        binding.code
         binding.code.doAfterTextChanged { ed ->
             val src = ed.toString()
-            viewModel.controller_src = src
+            viewModel.controllerSrc = src
         }
         val view = binding.root
         return view
