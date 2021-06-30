@@ -5,9 +5,10 @@ import Api
 import android.util.Log
 import com.google.protobuf.AbstractMessage
 import com.google.protobuf.ByteString
-import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
@@ -27,11 +28,17 @@ class Communication(val url: String?, val password: String?) {
 
     private val threadTx = thread(name = "CommunicationTxThread", start = false) {
         var client: Socket? = null
+        var hostSelector = 0
+
         while (true) {
+            val urlAndHosts = parseUrls(url)
+            val (host, port) = urlAndHosts[hostSelector % urlAndHosts.size]
             try {
-                val (host, port) = parseUrl(url)
-                onLog?.invoke(LOGTAG, "trying to connect to $host:$port")
-                client = Socket(host, port)
+                onLog?.invoke(LOGTAG, "trying to connect to" +
+                        " $host:$port")
+                client = Socket()
+                client.tcpNoDelay = true
+                client.connect(InetSocketAddress(InetAddress.getByName(host), port), TIMEOUTMS)
 
                 val ins = client.getInputStream()
                 val ous = client.getOutputStream()
@@ -148,6 +155,7 @@ class Communication(val url: String?, val password: String?) {
                     client?.close()
                 } catch (e: Throwable) {
                 }
+                hostSelector += 1
 
             }
 
@@ -300,6 +308,7 @@ class Communication(val url: String?, val password: String?) {
         const val ClientInfoString = "EspHomeRC"
         const val LOGTAGESPHOME = "ESPHOME"
         private const val maxMsgLen = 1024 * 1024   // prevent OOM
+        const val TIMEOUTMS = 1000
 
         private fun parseUrl(url: String?): Pair<String, Int> {
 
@@ -314,5 +323,13 @@ class Communication(val url: String?, val password: String?) {
 
             return Pair(host, port)
         }
+
+        private fun parseUrls(urls: String?): List<Pair<String, Int>> {
+            val res = mutableListOf<Pair<String, Int>>()
+            val parts = urls?.split(";", ",")
+            parts?.forEach { res.add(parseUrl(it)) }
+            return res
+        }
+
     }
 }
