@@ -31,7 +31,8 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
                 //trigger update of all affected properties
                 liveCamRotation.postValue(camRotation)
                 liveControllerSrc.postValue(controllerSrc)
-                reconnect()
+                //TODO reset image: liveImage.postValue(BitmapFactory.decodeResource())
+                comm?.stop()
             }
         }
 
@@ -142,10 +143,12 @@ class ControlCommViewModel(app: Application) : ObservableAndroidViewModel(app) {
         get() = getVehicleSetting(currentVehicleId, "esphomeapipassword")
 
     var controllerSrc: String
-        get() = getVehicleSetting(currentVehicleId, "controller_src") ?: Controller.DEFAULTSCRIPT
+    get() = getVehicleSetting(currentVehicleId, "controller_src") ?: Controller.DEFAULTSCRIPT
         set(src) {
             if (src != controllerSrc) {
+                //Log.i("controllerSrc", "changed controllerSrc!")
                 setVehicleSetting(currentVehicleId, "controller_src", src)
+                liveControllerSrc.postValue(src)
                 controller?.updateSrc(src)
                 //liveControllerSrc.postValue(src)
             }

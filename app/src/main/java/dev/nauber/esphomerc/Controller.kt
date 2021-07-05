@@ -157,7 +157,7 @@ class Controller(
 
     fun updateSrc(s: String) {
         script.set(s)
-        resetInput()
+        // resetInput()
     }
 
     fun stop() {
@@ -169,7 +169,7 @@ class Controller(
         const val LOGTAG = "Control"
         val DEFAULTSCRIPT = """
             outp = {};
-            outp.display = "Hi from the controller, I am running because " + 
+            outp.display = "Hi from everest controller, I am running because " + 
                             inp["reason"] + " at " + inp["timestamp_ms"] + " ms";
                     
             if (typeof i == "undefined") {
@@ -182,17 +182,20 @@ class Controller(
             
             var fwd = inp.user.y * 2.0 ;
             fwd = Math.max(Math.min(1.0, fwd), -1.0); //limit to +-1.0
-            fwd *= inp.user.aux0;
+            //fwd *= inp.user.aux0;
             
             var lr = inp.user.x;
             if (Math.abs(lr) > 0.3)
               lr = lr * 1.1;
             else
               lr = 0.0;
+              
+            var left = fwd + lr;
+            var right = fwd - lr; 
             
             outp.hbridge = [
-                           {"index":0, "strength": lr , "brake":false}, 
-                           {"index":1, "strength": fwd , "brake":false},
+                           {"index":0, "strength": -left * inp.user.aux0 , "brake":false}, 
+                           {"index":1, "strength": -right * inp.user.aux0, "brake":false},
                            {"index":2, "strength":  inp.user.aux1, "brake":false},
             ];
             

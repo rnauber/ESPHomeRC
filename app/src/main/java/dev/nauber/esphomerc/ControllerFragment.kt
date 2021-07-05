@@ -12,28 +12,29 @@ import com.brackeys.ui.language.javascript.JavaScriptLanguage
 import dev.nauber.esphomerc.databinding.FragmentControllerBinding
 
 class ControllerFragment : Fragment() {
+    private val viewModel: ControlCommViewModel by viewModels({ requireActivity() })
+    private lateinit var binding: FragmentControllerBinding
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val binding = FragmentControllerBinding.inflate(inflater, container, false)
-        val viewModel: ControlCommViewModel by viewModels({ requireActivity() })
+        binding = FragmentControllerBinding.inflate(inflater, container, false)
 
         val editor = binding.code
         editor.language = JavaScriptLanguage()
 
         editor.setTextContent(viewModel.controllerSrc)
 
-        viewModel.liveControllerSrc.observe(this, {
-            editor.setTextContent(it)
+        viewModel.liveControllerSrc.observe(viewLifecycleOwner, {
+            if (editor.text.toString() != it)
+                editor.setTextContent(it)
         })
         //TODO keep the undo stack
         editor.undoStack = UndoStack()
         editor.redoStack = UndoStack()
 
         binding.scroller.attachTo(editor)
-        binding.code
         binding.code.doAfterTextChanged { ed ->
             val src = ed.toString()
             viewModel.controllerSrc = src
