@@ -8,13 +8,19 @@ Features:
 * virtual joystick control
 * fully scriptable control via javascript
 
+## Galery of vehicles
 
-## [RC car retrofit with an ESP32-CAM](https://github.com/rnauber/ESPHomeRC-RetrofitCar) 
-
-|   |   |   |
-|---|---|---|
-| [![a test rig with a RC car](https://raw.githubusercontent.com/rnauber/ESPHomeRC-RetrofitCar/master/media/testrig.gif "a test rig with a RC car")<br> click for higher quality video](https://raw.githubusercontent.com/rnauber/ESPHomeRC-RetrofitCar/master/media/testrig.mp4)  |   |   [![a test rig with a RC car](https://raw.githubusercontent.com/rnauber/ESPHomeRC-RetrofitCar/master/media/drive.gif "test drive")<br> click for higher quality video](https://raw.githubusercontent.com/rnauber/ESPHomeRC-RetrofitCar/master/media/drive.mp4)|
+### [RC car retrofit with an ESP32-CAM](https://github.com/rnauber/ESPHomeRC-RetrofitCar) 
 
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rnauber/ESPHomeRC-RetrofitCar/master/media/testrig.gif" alt="a test rig with a RC car"\>
+&nbsp; &nbsp; &nbsp; &nbsp;
+  <img src="https://raw.githubusercontent.com/rnauber/ESPHomeRC-RetrofitCar/master/media/drive.gif" alt="test drive" \>
+</p>
 
+
+### [RC Snowmobile](https://github.com/rnauber/ESPHomeRC-Snowmobile)
+
+[![test drive of the RC snowmobile](https://raw.githubusercontent.com/rnauber/ESPHomeRC-Snowmobile/main/media/snowmobile.gif "a test drive of the RC snowmobile")<br>](https://raw.githubusercontent.com/rnauber/ESPHomeRC-Snowmobile/main/media/snowmobile.mp4)
 
