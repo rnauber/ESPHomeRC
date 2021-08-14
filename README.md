@@ -1,12 +1,20 @@
-# ESPHomeRC
+# <img src="https://raw.githubusercontent.com/rnauber/ESPHomeRC/master/logo3.png" height="50" > ESPHomeRC
 
-<a href="https://github.com/rnauber/ESPHomeRC">Open Source Remote Control App <img src="https://raw.githubusercontent.com/rnauber/ESPHomeRC/master/logo3.png" height="16" ></a> for interfacing with an <a href="https://esphome.io/"><img src="https://esphome.io/_images/logo-text.png" height="16" ></a> device.
+<a href="https://github.com/rnauber/ESPHomeRC">Open Source Remote Control App</a> for remote control vehicles with an <a href="https://esphome.io/"><img src="https://esphome.io/_images/logo-text.png" height="16" ></a>-based firmware.
 
-Features:
+## Features
 
 * live cam display
 * virtual joystick control
 * fully scriptable control via javascript
+
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rnauber/ESPHomeRC/master/metadata/en-US/images/sevenInchScreenshots/cockpit.jpeg" width="45%" \>
+&nbsp; &nbsp; &nbsp; &nbsp;
+  <img src="https://raw.githubusercontent.com/rnauber/ESPHomeRC/master/metadata/en-US/images/sevenInchScreenshots/controller.jpeg"  width="45%"\>
+</p>
+
 
 ## Galery of vehicles
 
