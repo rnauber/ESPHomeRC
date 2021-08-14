@@ -7,8 +7,8 @@ import android.view.ViewGroup
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.brackeys.ui.editorkit.utils.UndoStack
-import com.brackeys.ui.language.javascript.JavaScriptLanguage
+import com.blacksquircle.ui.editorkit.utils.UndoStack
+import com.blacksquircle.ui.language.javascript.JavaScriptLanguage
 import dev.nauber.esphomerc.databinding.FragmentControllerBinding
 
 class ControllerFragment : Fragment() {
@@ -18,7 +18,7 @@ class ControllerFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = FragmentControllerBinding.inflate(inflater, container, false)
 
         val editor = binding.code
